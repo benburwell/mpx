@@ -16,7 +16,7 @@ pcb * search_pcb(pcb * list, char name[]) {
 
   // step through the chain
   do {
-	if (strcmp(current->name, name) == 0) {
+	if (stricmp(current->name, name) == 0) {
 	  return current;
 	}
 	current = current->chain;
@@ -113,6 +113,7 @@ int build_pcb(pcb * addr, char name[], int type, int state,
   addr->stack[STK_DS] = ds;
 
   addr->stack_ptr =(unsigned) &(addr->stack[INIT_STACK]);
+  addr->loadaddr = cs;
   return 1;
 }
 
@@ -196,7 +197,9 @@ int remove_pcb(pcb **queue, pcb * addr) {
   do {
 	if (current->next == addr) {
 	  current->next = addr->next;
-	  (current->next)->prev = current;
+	  if (current->next != NULL) {
+		(current->next)->prev = current;
+	  }
 	  addr->next = NULL;
 	  addr->prev = NULL;
 	  return 0;

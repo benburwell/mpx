@@ -66,6 +66,7 @@ int main(void) {
 	cop = NULL;
 
 	// initialize the mod3 test pcbs
+	/*
 	pcb_addr = get_pcb(pcb_list);
 	build_pcb(pcb_addr, "test1", APP_PROCESS, READY, NOT_SUSPENDED, 0, _CS,
 			  (unsigned)test1, _DS, 0x200);
@@ -91,15 +92,18 @@ int main(void) {
 			  (unsigned)test5, _DS, 0x200);
 	insert_pcb(&ready_queue, pcb_addr, 0);
 
+
 	// initialize the system stack
 	_SP = (unsigned) &sys_stack[STACK_SIZE -1];
 
 	//get the show on the road!
 	sys_init();
 	dispatch();
+	*/
 
-	//never gonna get here
+	sys_init();
 	comhan();    /* Execute the command handler */
+	sys_exit();
 
 	return 0;
 }

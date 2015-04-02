@@ -24,7 +24,7 @@ void interrupt (*vect60)();  /* Storage for DOS int 60h */
 
 void sys_init()
 {
-    /* set up interrupt vector for MPX sys_calls */
+	/* set up interrupt vector for MPX sys_calls */
 
 	vect60 = getvect(0x60);
 	setvect(0x60,&sys_call);
@@ -42,13 +42,15 @@ void sys_exit()
 
 void interrupt dispatch()
 {
- /* your dispatcher code */
- if (ready_queue == NULL) {
-   sys_exit();
+ /*  MOD 4 dispatch */
+ do {
+   cop = cop -> next;
+ } while (cop != NULL && cop->suspend == SUSPENDED);
+
+ if (cop == NULL) {
+   _SP = sp_save;
  } else {
-   cop = ready_queue; // make the front of the queue the running process
-   remove_pcb(&ready_queue, cop);
-   _SP = cop->stack_ptr;
+   _SP = cop -> stack_ptr;
  }
 }
 
@@ -75,8 +77,8 @@ void interrupt sys_call()
 	cop->parm_add = parm_add;
 
 	// find out if the process wants to die... and kill it
-	if(parm_add->op_number != EXIT_CODE) {
-	  insert_pcb(&ready_queue, cop, 0);
+	if (parm_add->op_number == EXIT_CODE) {
+	  cop->suspend = SUSPENDED;
 	}
 
 	dispatch();

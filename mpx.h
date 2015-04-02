@@ -12,7 +12,8 @@
 #define  EXIT_CODE 0  /* Process requesting termination. code.    */
 #define  CON  1       /* The console device - keyboard & monitor. */
 #define  PRT  2       /* The printer device - LPT1.               */
-#define  COM  3       /* The serial port - COM1.                  */
+#define  COM  3       /* The serial port - COM1.         
+#define */
 
 /* MPX System request types. */
 
@@ -80,6 +81,15 @@ void cmd_alias(char *[]);
 void cmd_show(char *[]);
 void cmd_allocate(char *[]);
 void cmd_free(char *[]);
+
+void cmd_load(char *[]);
+void cmd_resume(char *[]);
+void cmd_run(char *[]);
+void cmd_suspend(char *[]);
+void cmd_terminate(char *[]);
+void cmd_setpri(char *[]);
+void cmd_dispatch();
+
 void sys_req(int,int,char *,int *);   /* MPX system request function. */
 int  directory(dir *, int);           /* Support function to load the */
 					  /* directory array.             */
@@ -113,6 +123,11 @@ void sys_exit(void);
 void interrupt dispatch(void);
 void interrupt sys_call(void);
 
+/**
+ * Load.c
+ */
+int load(unsigned *,char []);
+
 /*
  *   Global variable EXTERN directives.
  *
@@ -130,3 +145,4 @@ extern pcb * ready_queue;
 extern pcb * io_init_queue;
 extern pcb * cop; /* The currently operating process. */
 extern unsigned sys_stack[];
+extern unsigned sp_save; /* So that mod 4 can return to cmd_dispatch */
