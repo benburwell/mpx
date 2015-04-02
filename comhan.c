@@ -46,10 +46,10 @@ char *aliases[] = {"        ", "        ", "        ", "        ",
  */
 
 void comhan() {
-	char *args[5];
+	static char *args[7]; //one more than expected number of arguments
 	int argc;
 	int cmd_num;
-	char buffer[BUF_SIZE];
+	static char buffer[BUF_SIZE];
 	int do_stop = 0;
 
 	do {
@@ -102,7 +102,7 @@ int get_cmd(char cmd[]){
 int set_args(char buffer[], char *args[]) {
   /* use string tok to set the contents of args from buffer
 	 and return the number of args (will go into argc) */
-  char separators[4] = " =/"; //Characters that separate tokens
+  char separators[5] = " =/,"; //Characters that separate tokens
   int i = 0; //loop control
 
   args[i] = strtok(buffer, separators); //Get first token
@@ -178,7 +178,6 @@ int cmd_stop(){
 	printf("**COMHAN execution complete **\n");
 	return 1;
   } else {
-	printf("Okay! \n");
 	return 0;
   }
 }
@@ -413,7 +412,8 @@ void cmd_allocate(char *args[]) {
 	return;
   }
 
-  result = build_pcb(new, args[1], type, state, suspend, priority);
+  result = build_pcb(new, args[1], type, state, suspend, priority,
+					 NULL, NULL, NULL, NULL);
 
   switch (result) {
 	case 1:  break;

@@ -2,6 +2,12 @@
 #include <string.h>
 #include <stdio.h>
 
+#define STK_PSW    (STACK_SIZE - 1)
+#define STK_CS     (STACK_SIZE - 2)
+#define STK_IP     (STACK_SIZE - 3)
+#define STK_DS     (STACK_SIZE - 9)
+#define INIT_STACK (STACK_SIZE - 12)
+
 /**
  * Returns the address of the PCB with the specified name
  */
@@ -54,7 +60,7 @@ int free_pcb(pcb * list, pcb * addr) {
 		return -2;
 	  } else {
 		// we need to free the PCB
-		build_pcb(current, "        ", 0, -1, -1, 0);
+		build_pcb(current, "        ", 0, -1, -1, 0, NULL, NULL, NULL, NULL);
 		return 1;
 	  }
 	}
@@ -69,7 +75,8 @@ int free_pcb(pcb * list, pcb * addr) {
  * Sets the properties of the given PCB.
  */
 int build_pcb(pcb * addr, char name[], int type, int state,
-			  int suspend, int priority) {
+			  int suspend, int priority, unsigned cs, unsigned ip,
+			  unsigned ds, unsigned psw) {
   // check that address is valid
   if (addr == 0 || addr == NULL) {
 	return -1;
@@ -99,6 +106,13 @@ int build_pcb(pcb * addr, char name[], int type, int state,
   addr->prev = NULL;
   addr->priority = priority;
 
+  // set up the stack
+  addr->stack[STK_PSW] = psw;
+  addr->stack[STK_CS] = cs;
+  addr->stack[STK_IP] = ip;
+  addr->stack[STK_DS] = ds;
+
+  addr->stack_ptr =(unsigned) &(addr->stack[INIT_STACK]);
   return 1;
 }
 
@@ -172,7 +186,9 @@ int remove_pcb(pcb **queue, pcb * addr) {
   // are we removing the head?
   if (addr == *queue) {
 	*queue = addr->next;
-	(addr->next)->prev = NULL;
+	if (addr->next != NULL) {
+	  (addr->next)->prev = NULL;
+	}
 	return 0;
   }
 

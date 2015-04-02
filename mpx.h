@@ -43,7 +43,7 @@ typedef struct dirstruct dir;  /* Use dir as the data typer name.     */
 #define BLOCKED       2
 #define NOT_SUSPENDED 0
 #define SUSPENDED     1
-
+#define STACK_SIZE  400
 
 struct pcbstruct {
 	struct pcbstruct * chain;
@@ -55,8 +55,9 @@ struct pcbstruct {
 	short state;
 	short suspend;
 	unsigned stack_ptr;
-	unsigned stack[400];
+	unsigned stack[STACK_SIZE];
 	unsigned loadaddr;
+	unsigned parm_add; // added during mod because sys_call said so
 	int mem_size;
 };
 typedef struct pcbstruct pcb;
@@ -89,10 +90,28 @@ int  directory(dir *, int);           /* Support function to load the */
 pcb * search_pcb(pcb *, char[]);
 pcb * get_pcb(pcb *);
 int free_pcb(pcb *, pcb *);
-int build_pcb(pcb *, char[], int, int, int, int);
+int build_pcb(pcb *, char[] /*name*/, int /*type*/, int /*state*/,
+	int /*suspend*/, int /*priority*/, unsigned /*_cs*/, unsigned /*_ip*/,
+	unsigned /*_ds*/, unsigned /*psw*/);
 int insert_pcb(pcb**, pcb *, int);
 int remove_pcb(pcb**, pcb *);
 
+/**
+ * TestN.C
+ */
+void test1(void);
+void test2(void);
+void test3(void);
+void test4(void);
+void test5(void);
+
+/**
+ * Sys_sppt.c
+ */
+void sys_inti(void);
+void sys_exit(void);
+void interrupt dispatch(void);
+void interrupt sys_call(void);
 
 /*
  *   Global variable EXTERN directives.
@@ -109,3 +128,5 @@ extern int directory(dir *direct, int dir_size);
 extern pcb * pcb_list;
 extern pcb * ready_queue;
 extern pcb * io_init_queue;
+extern pcb * cop; /* The currently operating process. */
+extern unsigned sys_stack[];
