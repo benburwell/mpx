@@ -44,9 +44,11 @@ void sys_init()
 
 void sys_exit()
 {
+  disable();
   // restore the clock
   clock_close();
 
+  // close IO devices
   com_close();
   con_close();
   prt_close();
@@ -54,6 +56,7 @@ void sys_exit()
   /* restore interrupt vector 60 and exit */
   setvect(0x60,vect60);
 
+  enable();
   exit();
 }
 
@@ -62,22 +65,33 @@ void interrupt dispatch()
 {
  disable();
  if (DEBUG_PRINTS) {printf("in dispatch \n ");}
- // TODO fix this.. .cop is null when we start
+
  cop = ready_queue_locked;
+
+ // kill zombie processes
+ while (cop->state == ZOMBIE) {
+   remove_pcb(&ready_queue_locked, cop);
+   freemem(cop->loadaddr);
+   free_pcb(pcb_list, cop);
+   cop = ready_queue_locked;
+ }
 
  // skip over suspended processes
  while (cop != NULL && cop->suspend == SUSPENDED) {
    cop = cop -> next;
  }
+
  if (DEBUG_PRINTS){
- if (cop == NULL) {
-   printf("!!cop null?!!!\n");
- } else {
-   printf("cop - %s\n", cop->name);
- }
+   if (cop == NULL) {
+	 printf("!!cop null?!!!\n");
+   } else {
+	 printf("cop - %s\n", cop->name);
+   }
  }
 
  remove_pcb(&ready_queue_locked, cop);
+ cop->state = RUNNING;
+
  enable();
  _SP = cop -> stack_ptr;
 
@@ -104,10 +118,9 @@ void interrupt sys_call()
 
 	// find out if the process wants to die... and kill it
 	if (parm_add->op_number == EXIT_CODE) {
-	  strcpy(cop->name,"averill");
-	  //TODO: CHECK IF THE PCB HAS IO PENDING
 	  freemem(cop->loadaddr);
 	  free_pcb(pcb_list, cop);
+	  // NOTE: the process just made this sys_req so it cannot have any io
 	} else {
 	  IO_sched(cop);
 	}

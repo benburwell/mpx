@@ -15,7 +15,6 @@ int prt_opened;
 
 int prt_open(int * prt_flag) {
   unsigned char imr;
-  unsigned char pcr;
 
   disable();
 
@@ -48,7 +47,6 @@ int prt_open(int * prt_flag) {
 }
 
 int prt_write(char far *buffer, int far *length) {
-  unsigned char pcr;
 
   disable();
   // check that prt isn't busy
@@ -89,7 +87,6 @@ int prt_write(char far *buffer, int far *length) {
 }
 
 int prt_close() {
-  unsigned char pcr;
   unsigned char imr;
 
   disable();
@@ -114,8 +111,8 @@ int prt_close() {
 void interrupt prt_int() {
   unsigned char pcr;
   int *lst_stk;
-  float temp;
 
+  disable();
   lst_stk = _BP;
 
   // if no more char to write
@@ -131,7 +128,6 @@ void interrupt prt_int() {
 	*(prt.event_flag) = 1;
 
 	// call io-complete
-	// TODO: the book says (pg 86) that there should be stuff passed to io-complete
 	IO_complete(PRT, lst_stk);
 
 	// send end of interrupt signal
@@ -153,4 +149,5 @@ void interrupt prt_int() {
 
   // send EOI
   outportb(0x20, 0x20);
+  enable();
 }

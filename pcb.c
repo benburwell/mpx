@@ -126,12 +126,10 @@ int insert_pcb(pcb **queue, pcb * addr, int method) {
   pcb * current = *queue;
   pcb * one_after;
 
-  disable();
 
   // if there's nothing in the queue yet, make the PCB the start
   if (current == NULL) {
 	*queue = addr;
-	enable();
 	return 1;
   }
 
@@ -147,7 +145,6 @@ int insert_pcb(pcb **queue, pcb * addr, int method) {
 	current->next = addr;
 	addr->next = NULL;
 	addr->prev = current;
-	enable();
 	return 1;
   } else if (method == 0) {
 	// insert in priority order
@@ -176,10 +173,8 @@ int insert_pcb(pcb **queue, pcb * addr, int method) {
 	  addr->next = current;
 	  *queue = addr;
 	}
-	enable();
 	return 1;
   } else {
-	enable();
 	// There was a problem, return error code
 	return -1;
   }
@@ -191,7 +186,11 @@ int insert_pcb(pcb **queue, pcb * addr, int method) {
 int remove_pcb(pcb **queue, pcb * addr) {
   pcb * current = *queue;
 
-  disable();
+  if (addr == NULL || *queue == NULL) {
+	printf("bad times ahead \n");
+	return;
+  }
+
   // are we removing the head?
   if (addr == *queue) {
 	*queue = addr->next;
@@ -215,6 +214,5 @@ int remove_pcb(pcb **queue, pcb * addr) {
 	}
 	current = current->next;
   } while (current != NULL);
-  enable();
   return -1;
 }

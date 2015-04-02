@@ -22,36 +22,32 @@
 #define PROMPT         5
 #define ALIAS          6
 #define SHOW           7
-#define ALLOCATE       8
-#define CMD_FREE       9
-#define CMD_LOAD      10
-#define CMD_RESUME    11
-#define CMD_RUN       12
-#define CMD_SUSPEND   13
-#define CMD_TERMINATE 14
-#define CMD_SETPRI    15
-#define CMD_DISPATCH  16
-#define CLOCK     17
+#define CMD_LOAD       8
+#define CMD_RESUME     9
+#define CMD_RUN       10
+#define CMD_SUSPEND   11
+#define CMD_TERMINATE 12
+#define CMD_SETPRI    13
+#define CLOCK     14
 
-#define NUM_CMDS 18
+#define NUM_CMDS 15
 
-int length;             /* Length of the command line.      */
+int length = 1;         /* Length of the command line.      */
 unsigned sp_save;       /* A stack save for mod 4 dispatch. */
 
 char prompt[20] = "mpx>";
-const char version[] = "MPX OS - Version 1.0\n";
+const char version[] = "MPX-OS 2013 ZOMBIE Edition (v.1010372365424) \n";
 char date[] = "01/09/1991";
 
 char *cmds[] = { "version", "date", "directory", "stop",
 				 "help", "prompt", "alias", "show",
-				 "allocate", "free", "load", "resume",
+				 "load", "resume",
 				 "run", "suspend", "terminate", "setpriority",
-				 "dispatch", "clock", NULL};
+				 "clock", NULL};
 char *aliases[] = {"        ", "        ", "        ", "        ",
 				   "        ", "        ", "        ", "        ",
 				   "        ", "        ", "        ", "        ",
-				   "        ", "        ", "        ", "        ",
-				   "        ", "        ", NULL};
+				   "        ", "        ", "        ", NULL};
 
 /*
  *   comhan()    This is the command handler for the MPX OS.
@@ -68,12 +64,17 @@ void comhan() {
 	static char buffer[BUF_SIZE];
 	int do_stop = 0;
 
+	// Occasionally the first con_read request recieves an empty response
+	// Make a dummy request to compensate
+	sys_req(CON, READ, buffer, &length);
+
 	do {
 	  printf("%s ",prompt);              /* Print a prompt.         */
-	  //length = 4; //mpx>
-	  //sys_req(COM, WRITE, prompt, &length);
 	  length = BUF_SIZE;                 /* Reset length of buffer. */
 	  sys_req(CON,READ,buffer,&length);  /* Request CON input       */
+
+	  // For better display, print a newline after user input
+	  printf("\n");
 
 	  set_args(buffer, args);
 
@@ -86,15 +87,12 @@ void comhan() {
 		case PROMPT:        cmd_prompt(args);     break;
 		case ALIAS:         cmd_alias(args);      break;
 		case SHOW:          cmd_show(args);       break;
-//		case ALLOCATE:      cmd_allocate(args);   break;
-//		case CMD_FREE:      cmd_free(args);       break;
 		case CMD_LOAD:      cmd_load(args);       break;
 		case CMD_RESUME:    cmd_resume(args);     break;
 		case CMD_RUN:       cmd_run(args);        break;
 		case CMD_SUSPEND:   cmd_suspend(args);    break;
 		case CMD_TERMINATE: cmd_terminate(args);  break;
 		case CMD_SETPRI:    cmd_setpri(args);     break;
-//		case CMD_DISPATCH:  cmd_dispatch();       break;
 		case CLOCK:         cmd_clock(args);      break;
 		default:
 		  printf("Can't recognize. %s\n", args[0]);
@@ -128,8 +126,7 @@ int get_cmd(char cmd[]){
 int set_args(char buffer[], char *args[]) {
   /* use string tok to set the contents of args from buffer
 	 and return the number of args (will go into argc) */
-  char separators[5] = " /,:"; //Characters that separate tokens
-  // TODO: put = back in separators
+  char separators[6] = " /,:="; //Characters that separate tokens
   int i = 0; //loop control
 
   args[i] = strtok(buffer, separators); //Get first token
@@ -202,6 +199,7 @@ int cmd_stop(){
   sys_req(CON,READ,buffer,&length);
 
   if (strcmp(buffer, "y") == 0 || strcmp(buffer, "Y") == 0) {
+	disable();
 	do {
 	  if(p->type != FREE) {
 		freemem(p->loadaddr);
@@ -209,6 +207,7 @@ int cmd_stop(){
 	  }
 	  p = p->chain;
 	} while(p != NULL);
+	enable();
 	sys_exit();
 	printf("** COMHAN execution complete **\n");
 	return 1;
@@ -234,17 +233,18 @@ void cmd_help(char *args[]) {
   help[PROMPT]        = "prompt string        Change the prompt for commands";
   help[ALIAS]         = "alias command=string Create an alias for a command";
   help[SHOW]          = "show                 Prints PCB information";
-  help[ALLOCATE]      = "allocate             Builds PCB with specified options";
-  help[CMD_FREE]      = "free name            Frees the PCB called name";
   help[CMD_LOAD]      = "load name[=ppp]      Creates a process called name with priority ppp";
   help[CMD_RESUME]    = "resume name          Resumes the process called name";
   help[CMD_RUN]       = "run name[=ppp]       Runs a process called name with priority ppp";
   help[CMD_SUSPEND]   = "suspend name         Suspends the process called name";
   help[CMD_TERMINATE] = "terminate name       Terminates the process called name";
   help[CMD_SETPRI]    = "setpriority name=ppp Sets the priority of process name";
-  help[CMD_DISPATCH]  = "dispatch             Runs each process once";
   help[CLOCK]         = "clock [stop|start]   Perform clock operations";
 
+  if (args[1] != NULL && get_cmd(args[1]) < 0) {
+	printf("Not a valid command.\n");
+	return;
+  }
   // print header
   printf(               "  Name                 Use \n");
   printf(               "  ==================== ================================================= \n");
@@ -294,6 +294,8 @@ void print_pcb(pcb * p) {
 		str[1] = 'o';
 	} else if (p->state == BLOCKED) {
 		str[1] = 'b';
+	} else if (p->state == ZOMBIE) {
+		str[1] = 'z';
 	} else {
 		str[1] = '-';
 	}
@@ -308,7 +310,7 @@ void print_pcb(pcb * p) {
 
 	str[3] = '\0';
 
-	printf("0x%04x %8s %s 0x%04x 0x%04x 0x%04x %3d 0x%04x \n",
+	printf("0x%04x %8s %s 0x%04x 0x%04x 0x%04x %4d 0x%04x \n",
 		  p, p->name, str, p->chain, p->prev,
 		  p->next, p->priority, p->loadaddr);
 }
@@ -322,12 +324,12 @@ void cmd_show(char *args[]) {
 	return;
   }
 
-  printf("PCB_Ad Name     TSP chain  prev   next   pri l_addr \n");
-  printf("------ -------- --- ------ ------ ------ --- ------ \n");
+  printf("PCB_Ad Name     TSP chain  prev   next    pri l_addr \n");
+  printf("------ -------- --- ------ ------ ------ ---- ------ \n");
 
   if (strcmp(args[1], "init") == 0 || strcmp(args[1], "ready") == 0) {
 	disable();
-	current = (strcmp(args[1], "init") == 0)? io_init_queue : ready_queue_locked;
+	current = (strcmp(args[1], "init") == 0)? io_init_queue_locked : ready_queue_locked;
 	enable();
 
 	if (current == NULL) {
@@ -368,7 +370,7 @@ void cmd_show(char *args[]) {
  * Load
  */
 void cmd_load(char *args[]) {
-  int i, ret, priority = 0;
+  int i, priority = 0;
   unsigned segp;
   pcb *p;
   int paragraphs;
@@ -514,19 +516,10 @@ void cmd_terminate(char *args[]) {
    if (strcmp(args[1], "*") == 0) {
 	 p = pcb_list;
 	 do {
+	   // Set all application processes to ZOMBIE state
+	   // They will be terminated in dispatch()
 	   if (p->type == APP_PROCESS) {
-		 // remove from queue as needed
-		 disable();
-		 if (p->state == READY) {
-		   remove_pcb(&ready_queue_locked, p);
-		 } else if (p->state == BLOCKED) {
-		   remove_pcb(&io_init_queue, p);
-		 }
-		 enable();
-
-		 // free it
-		 freemem(p->loadaddr);
-		 free_pcb(pcb_list, p);
+		 p->state = ZOMBIE;
 	   }
 	   p = p -> chain;
 	 } while (p != NULL);
@@ -535,19 +528,7 @@ void cmd_terminate(char *args[]) {
 	 p = search_pcb(pcb_list, args[1]);
 
 	 if (p != NULL && p->type == APP_PROCESS) {
-
-	   disable();
-	   // remove from queue as needed
-	   if (p->state == READY) {
-		 remove_pcb(&ready_queue_locked, p);
-	   } else if (p->state == BLOCKED) {
-		 remove_pcb(&io_init_queue, p);
-	   }
-	   enable();
-
-	   // free it
-	   freemem(p->loadaddr);
-	   free_pcb(pcb_list, p);
+	   p->state = ZOMBIE;
 	 } else {
 	   printf("No process with the specified name. \n");
 	 }

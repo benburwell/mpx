@@ -11,7 +11,7 @@
 
 pcb * pcb_list;
 pcb * ready_queue_locked;
-pcb * io_init_queue;
+pcb * io_init_queue_locked;
 pcb * cop;
 
 pcb pcb0;
@@ -38,7 +38,6 @@ unsigned sys_stack[STACK_SIZE];
 
 int main(void) {
 	pcb * pcb_addr;
-	int rc;
 	dcb * d = &con;//test
 	char *args[] = {"load", "idle"};
 
@@ -88,7 +87,7 @@ int main(void) {
 
 	// set up command handler as a PCB
 	pcb_addr = get_pcb(pcb_list);
-	rc = build_pcb(pcb_addr, "ComHan", SYS_PROCESS, READY, NOT_SUSPENDED, 127, _CS,
+	build_pcb(pcb_addr, "ComHan", SYS_PROCESS, READY, NOT_SUSPENDED, 127, _CS,
 	  (unsigned)comhan, _DS, 0x200);
 
 	disable();
@@ -106,7 +105,7 @@ int main(void) {
 	// update priority for idle process
 	// we can't do this when initially calling because of
 	// APP_PROCESS type priority validation
-	pcb_addr = search_pcb(&pcb_list, "idle");
+	pcb_addr = search_pcb(pcb_list, "idle");
 	pcb_addr->priority = -128;
 	pcb_addr->suspend = NOT_SUSPENDED;
 	pcb_addr->type = SYS_PROCESS;

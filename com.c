@@ -3,7 +3,8 @@
  * CSI350 Operating Systems
  * Fall 2013
  * Averill Morash, Ben Burwell
- * COM.C
+ *
+ * File: com.c
  */
 
 #include <dos.h>
@@ -16,6 +17,7 @@ void interrupt (*vect0c)();
 
 int com_opened;
 
+// Open the com port
 int com_open(int * flag, int rate) {
   unsigned char imr;
   unsigned char mcr;
@@ -24,13 +26,15 @@ int com_open(int * flag, int rate) {
 
   disable();
 
+  // Ensure com has not already been opened, if
+  // it has, we must return.
   if (com_opened == NULL || com_opened == 0) {
 	com_opened = 1;
   } else {
 	return -2;
   }
 
-  // modify the interrupt vector table
+  // Modify the interrupt vector table
   vect0c = getvect(0x0c);
   setvect(0x0c, &com_int);
 
@@ -48,6 +52,7 @@ int com_open(int * flag, int rate) {
   // 1843200 / (1200 * 16) = 96 = 0x0060
   // So the MSB is 0x00 and the LSB is 0x60
 
+  // Ensure baud rate is valid
   if (rate != 1200) {
 	return -3;
   }
@@ -97,17 +102,27 @@ int com_open(int * flag, int rate) {
   return 0;
 }
 
+// Com Close
 void com_close() {
   disable();
+
+  // restore MS-DOS com vector
   setvect(0x0c, vect0c);
+
   enable();
 }
 
+// Interrupt handler
 void interrupt com_int() {
   int iir;
   int *lst_stk;
-  int ret = 0; //0 indicates not finished, 1 indicated finshed
 
+  // 0 indicates not finished, 1 indicated finshed
+  int ret = 0;
+
+  disable();
+
+  // save base pointer
   lst_stk = _BP;
 
   // check IIR to see what caused the interrupt
@@ -120,10 +135,11 @@ void interrupt com_int() {
   } else if (iir == 0x04) { // 0000-0100
 	ret = com_read_int();
   } else {
-	// something is wrong
+	// interrupt was not read or write
 	return;
   }
 
+  // if the operation is done, call IO_complete
   if (ret == 1) {
 	IO_complete(COM, lst_stk);
   }
@@ -131,70 +147,92 @@ void interrupt com_int() {
   // write end of interrupt to 8259
   outportb(0x20, 0x20);
 
+  enable();
   return;
 
 }
 
+// Read from the com port
 int com_read(char far * buffer, int far * length) {
 
   char dq;
   int i;
 
+  disable();
+
+  // if we haven't yet opened com, we can't proceed
   if (&com == NULL) {
-	// com not yet open
+	enable();
 	return -1;
   }
 
   // check for invalid length
   if (*length < 1) {
+	enable();
 	return -3;
   }
 
   // check if DCB is free
   if (com.current_op != NO_OP) {
 	// previous IO not yet complete
-	// TODO: we should block this process
+	enable();
 	return -2;
   }
 
+  if (buffer == NULL || length == NULL) {
+	printf("error in com_read\n");
+	enable();
+	return;
+  }
+  // set up the DCB
   com.buffer = buffer;
   com.length = length;
   com.current_op = READ_OP;
   com.count = 0;
 
+  // clear the buffer
   strcpy(buffer, "");
 
+  // now we need to use the ring buffer to place typed-ahead
+  // characters into the buffer
+
+  // keep track of how many characters are copied from the
+  // ring buffer.
   i = 0;
 
   while (com.ring_count > 0 && strlen(buffer) < *length) {
-
 	dq = dcb_dequeue(&com);
-	//strcat(buffer, &dq);
 	buffer[i] = dq;
 	i++;
   }
 
+  // place a null character at the end of the buffer
   buffer[i] = '\0';
   com.count = i;
 
+  enable();
   return 0;
 }
 
 int com_write(char far * buffer, int far * length) {
   int ier;
 
+  disable();
   // check that com has been initialized
   if (&com == NULL) {
+	enable();
 	return -1;
   }
 
   // check that com is not busy
   if (com.current_op != NO_OP) {
+	enable();
 	return -2;
   }
 
   // check that the length is valid
   if (*length < 1) {
+	enable();
 	return -3;
   }
 
@@ -210,6 +248,7 @@ int com_write(char far * buffer, int far * length) {
   ier = ier | 0x02;
   outportb(IER, ier);
 
+  enable();
   return 0;
 }
 

@@ -9,14 +9,13 @@
 #include <stdio.h>
 #include "mpx.h"
 
-#define DS_OFFSET   6 // was 3 before
+#define DS_OFFSET   6
 
-int count = 0;
 void IO_sup(pcb *p) {
-  char far *buffer;
-  int far *length;
-  unsigned *ds_add;
-  int con_w = 0;
+  char far *buffer;  // far pointer to the io buffer
+  int far *length;   // far pointer to an int representing length of the io buffer
+  unsigned *ds_add;  // data segment address
+  int con_w = 0;     // flag for if the request was a con_write request
   int rc;
 
   disable();
@@ -69,6 +68,9 @@ void IO_sup(pcb *p) {
   // put the pcb back in the ready queue, if it was a con_write
   if (con_w == 1) {
 	insert_pcb(&ready_queue_locked, p,0);
+	p->state = READY;
+  } else {
+	p->state = BLOCKED;
   }
   enable();
   return;
@@ -81,9 +83,14 @@ int IO_complete(int device, int *stk_ptr) {
   dcb *d;
 
   disable();
+  // get the dcb for the requested device
   switch (device){
 	case CON:
 	  d = &con;
+	  // the con dcb isn't managed by con drive
+	  // so we need to reset it here, but the
+	  // other dcbs are handled in those files
+	  // before calling io_complete
 	  d->current_op = NO_OP;
 	  break;
 	case COM:
@@ -111,20 +118,32 @@ int IO_complete(int device, int *stk_ptr) {
   // insert into ready queue
   insert_pcb(&ready_queue_locked, current, 0);
 
-  // set its state to ready
-  current->state = READY;
-
-  if (strcmp(d->current_pcb->name, "iocom2")==0) {
-	count++;
-	if (count > 20) {
-	d = &com;
-	}
+  // set its state to ready, unless it became
+  // a zombie while it was waiting for io to complete
+  if (current->state != ZOMBIE) {
+	current->state = READY;
   }
-  if (d->pcb_head != NULL) {
-	// if there are pending IO requests for this device
-	//schedule them (IO_sched)
-	remove_pcb(&(d->pcb_head), d->pcb_head);
-	IO_sched(d->pcb_head);
+
+  if (io_init_queue_locked != NULL) {
+	// if there are pending IO requests schedule them
+	current = io_init_queue_locked;
+	while (current != NULL && current->parm_add->op_number != device) {
+	  current = current->next;
+	}
+
+	if (current != NULL) {
+	  // take the pcb out of the io_init queue
+	  remove_pcb(&io_init_queue_locked, current);
+
+	  // if it wasn't terminated while waiting for io...
+	  if (current->state != ZOMBIE) {
+		// ... schedule the io
+		IO_sched(current);
+	  } else {
+		// send the zombie back to be ... dispatched ... muahaha
+		insert_pcb(&ready_queue_locked, current, 0);
+	  }
+	}
   }
 
   outportb(0x20,0x20); // EOI signal
@@ -145,6 +164,7 @@ int IO_sched(pcb *p) {
   int op_num;
   int op_type;
 
+  disable();
   if (DEBUG_PRINTS) {printf("in io sched\n");}
 
   // determine which device is requested
@@ -176,17 +196,18 @@ int IO_sched(pcb *p) {
 	  return -2;
   }
 
+  // If the device is busy
   if (d->current_op != NO_OP) {
 	disable();
 	// put pcb in IO queue
-	insert_pcb(&(d->pcb_head), p, 1);
-	// take pcb out of ready q
-	remove_pcb(&ready_queue_locked, p);
+	insert_pcb(&io_init_queue_locked, p, 1);
+	p->state = BLOCKED;
 	enable();
   } else {
+	// If the device wasn't busy, start the io
 	d->current_pcb = p;
 	IO_sup(p);
   }
-
+  enable();
   return 0;
 }

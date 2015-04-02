@@ -54,6 +54,7 @@ typedef struct parmstruct parm;
 #define READY         0
 #define RUNNING       1
 #define BLOCKED       2
+#define ZOMBIE        3
 #define NOT_SUSPENDED 0
 #define SUSPENDED     1
 #define STACK_SIZE  900
@@ -227,7 +228,7 @@ extern dir direct[];  /* Array of directory entries -     see direct.c */
 extern int directory(dir *direct, int dir_size);
 extern pcb * pcb_list;
 extern pcb * ready_queue_locked;
-extern pcb * io_init_queue;
+extern pcb * io_init_queue_locked;
 extern pcb * cop; /* The currently operating process. */
 extern unsigned sys_stack[];
 extern unsigned sp_save; /* So that mod 4 can return to cmd_dispatch */
