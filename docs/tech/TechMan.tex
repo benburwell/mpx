@@ -1,0 +1,57 @@
+\documentclass[11pt]{book}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{makeidx}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{makeidx}
+
+\definecolor{dkgreen}{rgb}{0, 0.6, 0}
+\definecolor{gray}{rgb}{0.5, 0.5, 0.5}
+\definecolor{mauve}{rgb}{0.58, 0, 0.82}
+\definecolor{dkred}{rgb}{0.7, 0, 0}
+
+\lstset{frame=tb,
+  language=C,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  identifierstyle=\color{dkred},
+  breaklines=true,
+  breakatwhitespace=true
+  tabsize=3
+}
+
+\author{B. Burwell and A. Morash}
+\title{MPX--OS Technical Manual}
+\date{Fall 2013}
+
+\makeindex
+
+\begin{document}
+
+\maketitle
+
+\frontmatter
+\tableofcontents
+
+\mainmatter
+\include{overview_of_program}
+\include{program_structure}
+\include{data_structures}
+\include{source_code}
+
+\printindex
+
+\backmatter
+
+\end{document}

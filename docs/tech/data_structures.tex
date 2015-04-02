@@ -1,0 +1,95 @@
+\chapter{Data Structures}
+\label{data_structures}
+
+\section{Process Control Block}
+\label{process_control_block}
+
+The operating system stores information about processes in a Process Control Block\index{Process Control Block} (PCB)\index{PCB}. Defined in {\tt mpx.h}, the PCB stores the following information:
+\begin{enumerate}
+    \item A pointer to the next PCB in the chain.
+    \item A pointer to the previous PCB in the queue.
+    \item A pointer to the next PCB in the queue.
+    \item A 9-character array to store the process name.\footnote{Note that thus, the maximum length of a process name is 8 characters, since character 9 will be {\tt 0x0}.}
+    \item A type (application or system).
+    \item A state (ready, running, or blocked).
+    \item A ``suspended'' flag.
+    \item A stack pointer for the process's stack.
+    \item An array of size {\tt STACK\_SIZE} to store the stack.
+    \item The address at which the process is loaded in memory.
+    \item The amount of memory allocated for the process.
+    \item A pointer to a parameter structure, storing the operation number and operation type for the process's current IO operation (if any).
+\end{enumerate}
+
+The actual code for the structure is listed here:
+
+\begin{lstlisting}
+struct pcbstruct {
+    struct pcbstruct * chain;
+    struct pcbstruct * next;
+    struct pcbstruct * prev;
+    char name[9];
+    short type;
+    short priority;
+    short state;
+    short suspend;
+    unsigned stack_ptr;
+    unsigned stack[STACK_SIZE];
+    unsigned loadaddr;
+    parm *parm_add;
+    int mem_size;
+};
+\end{lstlisting}
+
+Each process control block is linked to the next one (except for the last one, whose next PCB is {\tt NULL}) by a pointer for iteration purposes. Process control blocks can reside in at most one of several system-wide queues at any given time.
+
+\subsection{Ready Queue}
+
+The ready queue is maintained as a priority-ordered list of processes that are ready to be run. This way, the dispatcher knows which process to start next. Queue operations stored in {\tt pcb.c} use the {\tt next} and {\tt prev} fields of the PCB to create a doubly-linked list and is prioritized using the PCB's {\tt priority} field. By definition, the priority of an application process must be greater than the minimum priority and smaller than the maxiumum priority of a system process. In this way, we can assign the idle process to have the lowest possible priority and the command handler to have the highest possible priority.
+
+\subsection{I/O Queue}
+
+The I/O queue stores queue of processes involved in I/O operations. This queue is a normal FIFO queue, contrasted with the Ready Queue.
+
+\section{Device Control Block}
+\label{device_control_block}
+
+In order to manage I/O devices, MPX-OS uses Device Control Blocks,\index{Device Control Block} or DCBs. The {\tt struct} for the DCB is defined in {\tt mpx.h}, and is accessible to all component programs.
+
+The following information is stored:
+\begin{enumerate}
+    \item The current operation.
+    \item A pointer to the event flag used to signal completion.
+    \item A pointer to the PCB currently using the device.
+    \item A pointer to the head of the queue of PCBs waiting to use the device.
+    \item A far pointer to an int to store the length of the device buffer. The far pointer allows it to point to a different section of memory, since the variable will be declared in a user program.
+    \item A far pointer to a char array to store the I/O buffer.
+    \item A count of the number of characters in the buffer.
+    \item A char array to act as the ring buffer, implemented as a circular queue (see below).
+    \item The index of the front element of the ring buffer.
+    \item The index of the rear element of the ring buffer.
+    \item The number of characters in the ring buffer.
+    \item The maximum size of the ring buffer.
+\end{enumerate}
+
+The code for the DCB structure is listed below:
+\begin{lstlisting}
+struct dcb_struct {
+  unsigned current_op;
+  unsigned * event_flag;
+  pcb * current_pcb;
+  pcb * pcb_head;
+  far int * length;
+  far char * buffer;
+  int count;
+  far char * c_buffer;
+  char ring[INPUT_BUFFER_MAX];
+  int ring_front;
+  int ring_rear;
+  int ring_count;
+  int ring_size;
+};
+\end{lstlisting}
+
+\subsection{Ring Buffer}
+
+The ring buffer is used to implement type-ahead; that is, inputted characters are stored by the DCB when there is no current read operation and inserted into the buffer when a read request is made. There are several variables in the DCB structure used to implement the circular queue, whose logic is located in {\tt dcb.c}

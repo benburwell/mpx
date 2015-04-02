@@ -1,0 +1,618 @@
+\chapter{Detailed Description of Each Command}
+\label{description_of_commands}
+
+\section{\tt version}
+\index{version@{\tt version}}
+\label{version_cmd}
+
+This command will display some information about the current version of MPX that is
+running. 
+
+\subsection{Syntax}
+The command has the form {\tt version}.
+
+\subsection{Usage}
+The command can be called from the MPX prompt at any time.
+
+\subsection{Example}
+\begin{enumerate}
+    \item To get the version of MPX-OS that is currently running: \\
+        {\bf Input:} {\tt version} \\
+        {\bf Output:} {\tt MPX OS - Version 1.0}
+\end{enumerate}
+
+\subsection{Possible Errors}
+There are no error conditions.
+
+
+
+
+
+
+
+
+\section{\tt date}
+\index{date@{\tt date}}
+\label{date_cmd}
+
+This command is used to retrieve and set the system date. Note that the date does not
+actually increment as time passes.
+
+\subsection{Syntax}
+The command optionally takes a date string formatted as {\tt mm/dd/yyyy} where {\tt mm}
+is a two-digit one-based integer representing the month ({\tt 01} corresponding to January,
+{\tt 02} to February, and so on), {\tt dd} similarly corresponding to a one-based date of
+month, and {\tt yyyy} a year.
+
+The command has the form {\tt date [mm/dd/yyyy]}.\footnote{Note that in this document, we 
+use {\tt [ ]} to denote optional parameters.}
+
+\subsection{Usage}
+The command can be called from the MPX prompt at any time.
+
+\subsection{Example}
+\begin{enumerate}
+    \item To get the current system date: \\
+        {\bf Input:} {\tt date} \\
+        {\bf Output:} {\tt 12/04/2013}
+    \item To set the system date: \\
+        {\bf Input:} {\tt date 12/04/2013} \\
+        {\bf Output:} None.
+    \item Attempting to set an invalid date: \\
+        {\bf Input:} {\tt date 99/99/9999} \\
+        {\bf Output:} {\tt Invalid date.}
+\end{enumerate}
+\subsection{Possible Errors}
+The message ``Invalid date'' will be displayed if the date is not in a valid format, i.e.
+the month is not between 1 and 12 or date not between 1 and 31, year not a number.
+
+
+
+
+
+
+
+
+\section{\tt directory}
+\index{directory@{\tt directory}}
+\label{directory_cmd}
+
+The directory command will display a listing of all available MPX programs that can be
+loaded and run, along with their sizes.
+
+\subsection{Syntax}
+
+The command has the form {\tt directory}.
+
+\subsection{Usage}
+
+The command can be called from the MPX prompt at any time.
+
+\subsection{Example}
+\begin{enumerate}
+    \item Get a listing of programs when there are none: \\
+        {\bf Input:} {\tt directory} \\
+        {\bf Output:} {tt You have no programs}
+    \item Get a listing of programs when there is one: \\
+        {\bf Input:} {\tt directory} \\
+        {\bf Output:} {tt You have 1 program}
+    \item Get a listing of programs when there are four: \\
+        {\bf Input:} {\tt directory} \\
+        {\bf Output:} {tt You have 4 programs}
+\end{enumerate}
+
+\subsection{Possible Errors}
+This command will not generate any errors.
+
+
+
+
+
+
+
+
+\section{\tt stop}
+\index{stop@{\tt stop}}
+\label{stop_cmd}
+
+The stop command allows the user to exit MPX-OS and return to DOS. When the command is
+issued, the user will be prompted to confirm their action by typing the character {\tt y}.
+If any other character is entered, the user will remain in MPX-OS.
+
+\subsection{Syntax}
+
+The command has the form {\tt stop}.
+
+\subsection{Usage}
+
+The command can be called at any time through the MPX prompt.
+
+\subsection{Example}
+\begin{enumerate}
+    \item User calls stop, but does not want to exit: \\
+        {\bf Input:} {\tt stop} \\
+        {\bf Output:} {\tt Are you sure you want to exit? [y/n]:} \\
+        {\bf Input:} {\tt n} \\
+        {\bf Output:} None.
+    \item User calls stop, and does confirm wanting to exit: \\
+        {\bf Input:} {\tt stop} \\
+        {\bf Output:} {\tt Are you sure you want to exit? [y/n]:} \\
+        {\bf Input:} {\tt y} \\
+        {\bf Output:} {\tt ** COMHAN execution complete **}
+
+\end{enumerate}
+\subsection{Possible Errors}
+
+There are no error conditions.
+
+
+
+
+
+
+
+
+\section{\tt help}
+\index{help@{\tt help}}
+\label{help_cmd}
+
+The help command allows the user to get help about using MPX commands. If the command is
+run with no options, a brief description of all commands. Alternately, if called with the
+name of a command as an option, it will give only the description of that command.
+
+\subsection{Syntax}
+
+The command has the form {\tt help [command]}.
+
+\subsection{Usage}
+
+The command can be called at any time through the MPX prompt.
+
+\subsection{Example}
+\begin{enumerate}
+    \item User wants help for all processes: \\
+        {\bf Input:} {\tt help} \\
+        {\bf Output:} \\
+        \begin{tabular}{ll}
+            {\tt Name                 } & \tt{Use                                              } \\
+            {\tt ==================== } & \tt{=================================================} \\
+            {\tt version              } & \tt{Display version number                           } \\
+            {\tt help                 } & \tt{Provide information about commands               } \\
+            {\tt directory            } & \tt{List .mpx files                                  } \\
+            {\tt date [mm/dd/yyyy]    } & \tt{Display or set the system date                   } \\
+            {\tt stop                 } & \tt{Terminate execution of COMHAN                    } \\
+            {\tt prompt string        } & \tt{Change the prompt for commands                   } \\
+            {\tt alias command=string } & \tt{Create an alias for a command                    } \\
+            {\tt show                 } & \tt{Prints PCB information                           } \\
+            {\tt allocate             } & \tt{Builds PCB with specified options                } \\
+            {\tt free name            } & \tt{Frees the PCB called name                        } \\
+            {\tt load name[=ppp]      } & \tt{Creates a process called name with priority ppp  } \\
+            {\tt resume name          } & \tt{Resumes the process called name                  } \\
+            {\tt run name[=ppp]       } & \tt{Runs a process called name with priority ppp     } \\
+            {\tt suspend name         } & \tt{Suspends the process called name                 } \\
+            {\tt terminate name       } & \tt{Terminates the process called name               } \\
+            {\tt setpriority name=ppp } & \tt{Sets the priority of process name                } \\
+            {\tt dispatch             } & \tt{Runs each process once                           } \\
+            {\tt clock [stop|start]   } & \tt{Perform clock operations                         } \\
+        \end{tabular}
+
+    \item User wants help for the {\tt show} command: \\
+        {\bf Input:} {\tt help show} \\
+        {\bf Output:} \\
+        \begin{tabular}{ll}
+            {\tt Name                 } & \tt{Use                                              } \\
+            {\tt ==================== } & \tt{=================================================} \\
+            {\tt show                 } & \tt{Prints PCB information                           } \\
+        \end{tabular}
+
+\end{enumerate}
+\subsection{Possible Errors}
+
+There are no error conditions for this command.
+
+
+
+
+
+
+
+
+\section{\tt prompt}
+\index{prompt@{\tt prompt}}
+\label{prompt_cmd}
+
+This command is used to alter the prompt that is displayed to the user by the command 
+handler. For example, the user could change the prompt from the default {\tt mpx>} to
+{\tt >>}.
+
+\subsection{Syntax}
+
+The command has the form {\tt prompt string}, where {\tt string} is the new prompt.
+
+\subsection{Usage}
+
+The command can be called from the MPX prompt at any time.
+
+\subsection{Example}
+\begin{enumerate}
+    \item User wants to set the prompt to ``os'': \\
+        {\bf Input:} {\tt prompt os} \\
+        {\bf Output:} No output.
+\end{enumerate}
+
+\subsection{Possible Errors}
+
+If a {\tt string} is not passed, the user will receive the error ``No prompt specified.''
+
+
+
+
+
+
+
+
+\section{\tt alias}
+\index{alias@{\tt alias}}
+\label{alias_cmd}
+
+The alias command allows the user to make an alias for any of the commands. For example, 
+if the user needs to access the value of the system clock in rapid succession, the
+{\tt clock} command could be aliased to simply {\tt c}.
+
+\subsection{Syntax}
+
+The syntax for this command is: {\tt alias command=new}, with {\tt command} the name of
+the command to be aliased, and {\tt new} the string that should be made equivalent to
+{\tt command}.
+
+\subsection{Usage}
+
+The command can be called from the MPX prompt at any time.
+
+\subsection{Example}
+\begin{enumerate}
+    \item Setting ``c'' to be an alias for ``clock'': \\
+        {\bf Input:} {\tt alias clock=c} \\
+        {\bf Output:} None.
+\end{enumerate}
+\subsection{Possible Errors}
+
+If {\tt command} or {\tt new} are not specified, the user will receive the error ``No
+prompt specified.''
+
+
+
+
+
+
+
+
+\section{\tt show}
+\index{show@{\tt show}}
+\label{show_cmd}
+
+The show command is used to view the status of various processes.
+
+\subsection{Syntax}
+
+The command is of the form {\tt show type}, where type is one of {\tt free}, {\tt all},
+{\tt system}, {\tt application}, {\tt suspended}, {\tt ready}, or {\tt init}.
+
+\subsection{Usage}
+
+\begin{enumerate}
+    \item[{\tt free}] Display all free process control blocks.
+    \item[{\tt all}] Display all process control blocks.
+    \item[{\tt system}] Display all system processes.
+    \item[{\tt application}] Display all application processes.
+    \item[{\tt suspended}] Display all suspended processes.
+    \item[{\tt ready}] Display all ready processes.
+    \item[{\tt init}] Display all processes that are waiting for I/O.
+\end{enumerate}
+
+If a type is not given by the user, a message describing the possible values is displayed.
+
+\subsection{Example}
+\begin{enumerate}
+    \item User wants a listing of all process control blocks: \\
+        {\bf Input:} {\tt show all} \\
+        {\bf Output:} A table of data about all process control blocks.
+\end{enumerate}
+\subsection{Possible Errors}
+
+If the type specified is not one of the valid types, an empty table will be displayed.
+
+
+
+
+
+
+
+\section{\tt load}
+\index{load@{\tt load}}
+\label{load_cmd}
+
+This command loads a program file into memory and prepares it for execution by MPX-OS.
+
+\subsection{Syntax}
+
+The command has the form {\tt load proc[=ppp]} where {\tt proc} is the name of the process
+to be loaded (and stored in the file {\tt proc.mpx}), and {\tt ppp} is an optional
+execution priority (default is zero). The priority $p$ must satisfy $-127 < p < 127$.
+
+\subsection{Usage}
+
+The command can be called from the MPX prompt at any time.
+
+\subsection{Example}
+\begin{enumerate}
+    \item User wants to load the process ``proc1'': \\
+        {\bf Input:} {\tt load proc1} \\
+        {\bf Output:} None.
+    \item User wants to load the process ``proc2'' with priority 100: \\
+        {\bf Input:} {\tt load proc2=100} \\
+        {\bf Output:} None.
+\end{enumerate}
+\subsection{Possible Errors}
+
+Several errors and warnings can occur when calling the command. If there is no file named
+{\tt proc.mpx} where {\tt proc} is the name argument to the load command, the message 
+``Error: No program found with that name'' will be displayed and the program will not be 
+loaded.
+
+If the program file does exist, but MPX-OS is unable to allocate sufficient memory for it
+to be loaded, the message ``Error: Insufficient memory'' will be displayed and the program
+will not be loaded.
+
+If there is sufficient memory, but the system encounters an error while loading the
+program file into memory, the message ``Error: Could not load program into memory'' will 
+be displayed, and again, the program will not be loaded.
+
+If an invalid priority was specified by the user, the message ``Warning: invalid priority
+specified, using default'' will be displayed. MPX-OS will continue to load the program,
+but with zero as the priority.
+
+If there are no available process control blocks to allocate to the process, MPX cannot
+run the program at this time. In this case, the message ``Error: No free PCBs'' will be
+displayed and the program will not be loaded.
+
+In the case that there is an error building the process control block for the process that
+has been loaded into memory, MPX-OS will not be able to execute it. Thus, the memory will
+be deallocated and the message ``Error: Unable to build PCB'' will be displayed to the
+user.
+
+
+
+
+
+
+\section{\tt resume}
+\index{resume@{\tt resume}}
+\label{resume_cmd}
+
+The resume command allows a suspended process to continue running.
+
+\subsection{Syntax}
+
+The resume command has the format {\tt resume name|*}.\footnote{Note that we are using {\tt |} to denote ``or.''} If a {\tt name} is given, MPX-OS 
+will attempt to find a process named {\tt name} and resume it. Otherwise, if {\tt *} is 
+given, MPX-OS will resume all currently suspended processes.
+
+\subsection{Usage}
+
+The resume command is used when the user has suspended a process and wishes it to resume
+its execution.
+
+\subsection{Example}
+\begin{enumerate}
+    \item User wants to resume the process {\tt proc}: \\
+        {\bf Input:} {\tt resume proc} \\
+        {\bf Output:} None.
+    \item User wants to resume all processes: \\
+        {\bf Input:} {\tt resume *} \\
+        {\bf Output:} None.
+\end{enumerate}
+\subsection{Possible Errors}
+
+When {\tt resume} is called with no options, a message reminding the user to enter the
+name of a process to resume or an asterisk is displayed.
+
+If a name was given as the option, but MPX-OS cannot find a process with that name, the
+message ``No process named $x$'' will be displayed.
+
+Upon correct execution, there will be no output.
+
+
+
+
+
+\section{\tt run}
+\index{run@{\tt run}}
+\label{run_cmd}
+
+The run command behaves similarly to the load command, with the difference being quite
+minor. Whereas the load command simply allocated memory and set up a process control block
+for a process to be later run by a user using the resume command, the run command
+compresses these steps into one operation. Put simply, the run command does just that: it
+load a program from the disk and runs it.
+
+\subsection{Syntax}
+
+The command has the form {\tt run proc[=ppp]} where {\tt proc} is the name of the program
+(i.e., there is a file named {\tt proc.mpx}) and {\tt ppp} is the priority that should be
+used, where {\tt ppp} satisfies the condition $-127 < {\tt ppp} < 127$.
+
+\subsection{Usage}
+Usage
+\subsection{Example}
+\begin{enumerate}
+    \item User wants to run the process ``proc1'': \\
+        {\bf Input:} {\tt run proc1} \\
+        {\bf Output:} None.
+    \item User wants to run the process ``proc2'' with priority 100: \\
+        {\bf Input:} {\tt run proc2=100} \\
+        {\bf Output:} None.
+\end{enumerate}
+\subsection{Possible Errors}
+
+Since the run command first loads the process, all of the error messages from the load
+command can be obtained by using the run command.
+
+In addition, if there was an error loading the process, the message ``Error: process did
+not load correctly'' will be displayed.
+
+
+
+
+
+
+
+\section{\tt suspend}
+\index{suspend@{\tt suspend}}
+\label{suspend_cmd}
+
+The suspend command is used when a running program needs to be temporarily paused.
+
+\subsection{Syntax}
+
+The command has the form {\tt suspend proc|*} where {\tt proc} is the name of the program
+to be suspended. If the {\tt *} option is used, all running application processes will be 
+suspended.
+
+\subsection{Usage}
+The command can be called whenever there is a running program.
+
+\subsection{Example}
+\begin{enumerate}
+    \item User wants to suspend the process {\tt proc}: \\
+        {\bf Input:} {\tt suspend proc} \\
+        {\bf Output:} None.
+    \item User wants to suspend all processes: \\
+        {\bf Input:} {\tt suspend *} \\
+        {\bf Output:} None.
+\end{enumerate}
+\subsection{Possible Errors}
+
+If there is no process named {\tt proc}, the message ``No process with the specified name''
+will be displayed.
+
+
+
+
+
+
+
+\section{\tt terminate}
+\index{terminate@{\tt terminate}}
+\label{terminate_cmd}
+
+The terminate command frees the PCB that was associated with an application process and
+frees the memory that was in use by the program.
+
+\subsection{Syntax}
+
+Similarly to the resume and suspend commands, the format is {\tt terminate name|*}, where
+{\tt name} corresponds to the name of the application process to be terminated, and {\tt *}
+to the fact that all application processes should be terminated.
+
+\subsection{Usage}
+
+The command can be run when there are currently running or suspended application processes.
+
+\subsection{Example}
+\begin{enumerate}
+    \item User wants to terminate the process {\tt proc}: \\
+        {\bf Input:} {\tt terminate proc} \\
+        {\bf Output:} None.
+    \item User wants to terminate all processes: \\
+        {\bf Input:} {\tt terminate *} \\
+        {\bf Output:} None.
+\end{enumerate}
+\subsection{Possible Errors}
+
+If there is no process called {\tt name}, the message ``No process with the specified name''
+will be displayed.
+
+
+
+
+
+
+
+\section{\tt setpriority}
+\index{setpriority@{\tt setpriority}}
+\label{setpriority_cmd}
+
+The setpriority command allows the user to specify an execution priority for a process.
+
+\subsection{Syntax}
+The format of the command is {\tt setpriority name=ppp} where {\tt name} refers to the 
+name of the affected process and {\tt ppp} to the priority. As only the priority of 
+application processes can be set, $-127 < {\tt ppp} < 127$ must be satisfied.
+
+\subsection{Usage}
+The command can be called when there is a non-zero number of application processes in MPX.
+
+\subsection{Example}
+\begin{enumerate}
+    \item Set the priority of programm {\tt proc} to be $-90$: \\
+        {\bf Input:} {\tt setpriority proc=-90} \\
+        {\bf Output:} None.
+\end{enumerate}
+\subsection{Possible Errors}
+
+There are two possible errors from this command. First, the priority could be invalid, in
+which case the message ``Error: invalid priority'' will be displayed. In the other, there
+is not really any process with the name specified, and MPX-OS will display ``Error: invalid
+process name.''
+
+
+
+
+
+
+
+\section{\tt clock}
+\index{clock@{\tt clock}}
+\label{clock_cmd}
+
+The clock command is used to perform various tasks using the system clock. The clock can
+be stopped and started, set to a particular value, or have its value read.
+
+\subsection{Syntax}
+
+The command uses the form {\tt clock job|time}, where {\tt job} is one of {\tt stop}, 
+{\tt start} and {\tt time} is a string formatted as {\tt hh:mm:ss} with {\tt hh} hours, 
+{\tt mm} minutes, and {\tt ss} seconds.
+
+\subsection{Usage}
+
+The clock command can be called at any time from the MPX-OS command handler.
+
+\subsection{Example}
+\begin{enumerate}
+    \item Starting the clock: \\
+        {\bf Input:} {\tt clock start} \\
+        {\bf Output:} None.
+    \item Stopping the clock: \\
+        {\bf Input:} {\tt clock stop} \\
+        {\bf Output:} None.
+    \item Getting the clock value: \\
+        {\bf Input:} {\tt clock} \\
+        {\bf Output:} {\tt The current time is 21:09:44}
+    \item Setting the system clock: \\
+        {\bf Input:} {\tt clock 21:09:44} \\
+        {\bf Output:} None.
+\end{enumerate}
+\subsection{Possible Errors}
+
+If for some reason, the clock is unable to be set, the message ``Error setting clock'' 
+will be displayed.
+
+
+
+
+
+
+
+

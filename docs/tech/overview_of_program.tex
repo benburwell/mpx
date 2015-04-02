@@ -1,0 +1,21 @@
+\chapter{Overview of the Program}
+\label{overview_of_program}
+
+The MPX Operating System is designed as an exercise to examine various concepts within the theory of operating systems (rather than as a consumer-usable system). It is specially constructed to be started from within MS-DOS, at which time it will ``take over'' the operating system to perform many of its tasks. As MS-DOS is interrupt-driven, it uses interrupt handler routines to perform many low-level services, such as performing I/O, keeping time using the CPU clock, etc. Thus, we can replace the functionality of the interrupt handlers with code we have written by modifying the interrupt vector table.
+
+MPX is written in C. The following files are used:
+\begin{enumerate}
+    \item {\tt mpx.h} --- A C header file containing all of the functions implemented, global variables, and {\tt \#DEFINE}d macros.
+    \item {\tt clock.c} --- Functions for enabling, configuring, and disabling the clock interrupt, as well as the function that is referenced in the interrupt vector table that is called when a clock interrupt occurs.
+    \item {\tt com.c} --- Functions for enabling, configuring, and disabling the {\tt COM} interrupts, as well as the function that is referenced in the interrupt vector table and is called when a clock interrupt occurs.
+    \item {\tt comhan.c} --- The code for the command handler, which is the main system process that prints a prompt and gets a user-inputted command.
+    \item {\tt dcb.c} --- Functions for dealing with Device Control Blocks (see page \pageref{device_control_block}).
+    \item {\tt direct.c} --- Functions for accessing MS-DOS directory listings. This code was provided by the project.
+    \item {\tt io.c} --- Functions for managing the queueing of processes with regard to I/O operations.
+    \item {\tt main.c} --- Contains {\tt main()}, which is called to perform setup tasks when MPX-OS first boots.
+    \item {\tt pcb.c} --- Functions for dealing with Process Control Blocks (see page \pageref{process_control_block}), including their queueing operations.
+    \item {\tt printer.c} --- Functions for enabling, configuring, and disabling the printer interrupts, as well as the function that is referenced in the interrupt vector table and is called when a clock interrupt occurs.
+    \item {\tt sys\_req.c} --- Contains the code for generating a software interrupt for when a system request is made from within MPX. This code was provided by the project.
+    \item {\tt sys\_sppt.c} --- System support, including initializing devices, closing devices, and handling system calls.
+\end{enumerate}
+

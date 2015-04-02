@@ -1,0 +1,38 @@
+\chapter{Overview of COMHAN}
+\label{overview_of_comhan}
+
+\section{The Command Handler}
+
+All of your interactions with MPX-OS \index{MPX-OS} will be through the
+``Command Handler,'' \index{Command Handler} referred to
+as ``comhan.'' The command handler is a process that is loaded when MPX-OS first starts
+and allows users to execute commands such as getting help, running programs, setting the
+date, and other system-wide functionality.
+
+To use the command handler, you must only start MPX. You will see the prompt {\tt mpx>}
+which indicates that the system is ready to accept commands. You may then type in a 
+command on the keyboard and press return. The command handler will then attempt to parse 
+your command. If what you have entered is a valid system command, MPX will execute your 
+request and then prompt you for the next command. If the text you enter at the MPX prompt
+is not valid, you will see an error message.
+
+Note that the command handler parses your input case insensitively; that is, typing 
+{\tt version}, {\tt VERSION}, and {\tt vERsiOn} at the prompt will result in identical 
+output.
+
+All of the commands used in MPX-OS are listed in \ref{summary_of_commands}. Alternately,
+when in MPX-OS, the command {\tt help} will display a list of commands and a brief usage
+description. Of particular note, however, is the {\tt stop} command, which will terminate
+MPX-OS and return control of the computer to DOS.
+
+\section{A Note on Errors}
+
+When writing MPX-OS, we have subscribed to the philosophy that the user does not need to 
+know what the system is doing unless it pertains to their actions. Thus, for the most part,
+the normal behavior of a command is to see no output. For example, when changing the 
+prompt (see p. \pageref{prompt_cmd}), there is no ``prompt changed'' message; the user
+should be able to trust the system to perform correctly.
+
+Thus, messages will generally only be displayed when some unexpected behavior has occurred. 
+For full and more precise details on exactly what the output of each command, see the
+appropriate documentation in this Manual.

@@ -1,0 +1,118 @@
+\chapter{Program Structure}
+\label{program_structure}
+
+\section{Processes}
+
+\subsection{Types}
+
+Processes in MPX-OS can be one of two types: application or system processes. Application processes are any process that is loaded by a user. System processes are defined by MPX-OS for internal use; a user cannot load or run a system process. Precisely, MPX-OS defines two system processes, the first of which being the command handler. This process accepts and parses user commands to the operating system. The second system process is the idle process. This process does nothing, it only ensures that when the command handler is engaged in an I/O wait and is therefore blocked, there is something that can be running.
+
+\subsection{Prioritization}
+
+Each process has a priority. This allows more important processes, such as the command handler, to get more CPU time than less important ones, such as the idle process. A user can specify the priority of a process when it is loaded. Application processes can have priority $p_a$ where $-126 \le p_a \le 126$, and system processes can have priority $p_s$ where $-128 \le p_s \le 127$.
+
+\subsection{States}
+
+There are a number of states each process can be in, including {\tt READY}, {\tt RUNNING}, {\tt BLOCKED}, and {\tt ZOMBIE}. If a process is ready, it can be started immediately. It will then transition to the running state until it executes a system call. If it requests I/O, the process is blocked until the operation completes. If the user requests termination of the process while an I/O operation is in progress, the process will be placed in the zombie state. The I/O will complete, but immediately upon completion the process will be terminated. If the process requests termination, on the other hand, it is immediately terminated, the memory deallocated, and the PCB freed.
+
+\subsection{Suspension}
+
+A process can also be suspended, which is essentially pausing it. This is a user action; the user can put processes into and take them out of the suspended state arbitrarily. A suspended process will remain in the queue but will be skipped over when it is reached by the dispatcher.
+
+\section{System Call ({\tt sys\_call})}
+
+This function is called whenever one of MPX's processes is requesting a service, such as an I/O operation or termination. It is an interrupt function (its type is {\tt void interrupt}). The function is responsible for examining the parameters that have been placed on the stack, determining the corresponding operation, and executing it.
+
+\section{Dispatcher ({\tt dispatch})}
+
+The dispatcher is responsible for retrieving the next queued process and running it. It is also an {\tt interrupt} function. This means that the values of all of the registers will be pushed onto the stack before the function begins, and the registers are popped back off when it is finished.
+
+\section{Clock Operations}
+
+The clock interrupt functions in {\tt clock.c} are used to manage the system clock. When MPX-OS boots, it opens the clock for usage by MPX. A global {\tt long} is used to maintain the absolute number of clock ticks, which are configured to occur 18.2 times every second.
+
+The interrupt handler simply increments the counter variable. There is also a function for reading the clock value which takes pointers to {\tt int}s for storing the number of hours, minutes, and seconds that make up the number of ticks.
+
+It is of note that the clock will reset to zero when 24 hours are reached. Though partially for aesthetic reasons, it also ensures we do not overflow the capacity of a {\tt long} when running MPX-OS for an extended period of time.
+
+\section{I/O Drivers}
+
+\subsection{COM}
+The functionality for communicating with the {\tt com} port is contained in {\tt com.c}, which has the following functions defined:
+
+\subsubsection{\tt com\_open}
+
+If the COM port is already open, {\tt -2} will be returned. This function initializes the COM port by setting the clock rate's Most Significant Byte (MSB) and Least Significant Byte (LSB) correctly in the Line Control Register. The interrupt vector table is modified such that our interrupt handler will be called when a clock interrupt occurs.
+
+The function also needs to ensure that interrupts are enabled, now that they will be generated and handled properly. To do this, it sets bit 4 of the Interrupt Mask Register (IMR) to be zero. Bit 3 of the Modem Control Register is set to enable the MCR to receive interrupts from the UART. The Interrupt Enable Register is set to specify which serial interrupts should be enabled.
+
+Finally, the Device Control Block (page \pageref{device_control_block}) is initialized with the event flag.
+
+\subsubsection{\tt com\_close}
+
+To close the COM port, we simply restore pointer to the the MS-DOS interrupt handler in the interrupt vector table.
+
+\subsubsection{\tt com\_int}
+
+This is the function that handles COM interrupts. It saves the Base Pointer to return to later, and checks the IIR to see what the interrupt was from and calls either {\tt com\_write\_int} or {\tt com\_read\_int}, whichever is appropriate.
+
+\subsubsection{\tt com\_read}
+
+This function initializes a read operation from the COM port with the buffer and length pointers. Since these will be from other processes, they must be declared as {\tt far} pointers.
+
+\subsubsection{\tt com\_write}
+
+This function initializes a write operation from the COM port, similarly to how {\tt com\_read} works.
+
+\subsubsection{\tt com\_read\_int}
+
+This function is called when the COM port sends a character to the operating system. It is appended to the program buffer. If it was the last character for the buffer (determined by the {\tt length} pointer), a {\tt 1} is returned indicating that the I/O operation has finished. Otherwise, a {\tt 0} is returned.
+
+\subsubsection{\tt com\_write\_int}
+
+Similarly, this function is called when the COM port indicates it is ready to receive a character to be written. It takes the next character from the buffer and puts it into the holding register to be printed to the terminal.
+
+\subsection{Printer}
+
+The functionality for interfacing with the printer is stored in {\tt printer.c}, which contains the following functions:
+
+\subsubsection{\tt prt\_open}
+
+The printer is initialized by setting up the function pointer in the interrupt vector table, enabling printer interrupts on the 8259, clearing the init bit and setting the select bit on the Printer Control Register, and initializing the Device Control Block.
+
+\subsubsection{\tt prt\_write}
+
+To write to the printer, we save the buffer and length into the DCB, enable printer interrupts on PCR, strobing the printer, writing null to the Printer Data Register, and unstrobing the printer.
+
+When the printer is finished printing the null character, it will generate an interrupt to signal that it is ready to print the next character from the buffer.
+
+\subsubsection{\tt prt\_close}
+
+To close the printer, we disable printer interrupts using the Interrupt Mask Register and restore the MS-DOS interrupt vector.
+
+\subsubsection{\tt prt\_int}
+
+This is the function called when the printer is ready to receive a character. The base pointer is saved. If there are more characters to write, the printer is strobed, the next character from the buffer copied into the Printer Data Register, and the printer is unstrobed.
+
+If there are no more characters to write, the printer interrupts are disabled and the event flag is set. We then call {\tt IO\_complete}, passing the identifier of the printer device and the saved base pointer.
+
+The End of Interrupt is sent.
+
+
+\section{Scheduling}
+
+In MPX-OS, a Round-Robin dispatcher is implemented. There are several functions that handle scheduling tasks based on processes' pending I/O requests. All of this functionality is stored in {\tt io.c}, which implements the following:
+
+\subsubsection{\tt IO\_sup}
+
+The far pointers are made to the buffer and length. Then, the proper command based on the op number and op type is called. For example, if the op number refers to COM and the op type is write, {\tt com\_write} is called with the new far pointers. If the request was for a write operation to the console, we insert the process back into the ready queue, since this is not an interrupt-driven operation.
+
+\subsubsection{\tt IO\_complete}
+
+The DCB corresponding to the requested device is obtained. The stack pointer of {\tt cop} is set as the saved value. If the process was in the blocked state (as opposed to zombie if its termination had been requested by the user during the I/O operation), its state is set back to ready. In either case, it is placed back in the ready queue.
+
+If there are any pending I/O requests for the device that just completed, the processes requesting I/O are scheduled by calling {\tt IO\_sched}. Finally, the End of Interrupt signal is sent, and the dispatcher is called.
+
+\subsubsection{\tt IO\_sched}
+
+The operation number and type are determined and the appropriate DCB is accessed. If it has an I/O operation in progress, the process is added to the DCB queue and removed from the ready queue. Otherwise (if there is no operation in progress), the currently operating PCB for the DCB is set to the requesting process.
