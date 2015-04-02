@@ -12,8 +12,7 @@
 #define  EXIT_CODE 0  /* Process requesting termination. code.    */
 #define  CON  1       /* The console device - keyboard & monitor. */
 #define  PRT  2       /* The printer device - LPT1.               */
-#define  COM  3       /* The serial port - COM1.         
-#define */
+#define  COM  3       /* The serial port - COM1.                  */
 
 /* MPX System request types. */
 
@@ -63,6 +62,43 @@ struct pcbstruct {
 };
 typedef struct pcbstruct pcb;
 
+#define INPUT_BUFFER_MAX 40
+#define NO_OP 0
+#define READ_OP 1
+#define WRITE_OP 2
+
+#define MCR 0x3fc
+#define IER 0x3f9
+#define LCR 0x3fb
+#define RBR 0x3f8
+#define THR 0x3f8
+#define BRDR_LSB 0x3f8
+#define BRDR_MSB 0x3f9
+#define IIR 0x3fa
+
+#define IMR  0x21                   /* Port address of IMR     */
+#define CMR  0x43                   /* Command mode register   */
+#define IRQ0 0x01                   /* Mask for Timer          */
+#define CLOCK_ENABLE (0xff - IRQ0)  /* Mask to clear Timer bit */
+#define CLOCK_DISABLE (0x00 + 1)    /* Mask to set Timer bit   */
+
+/* Device Control Block */
+struct dcb_struct {
+  unsigned current_op;
+  unsigned * event_flag;
+  far int * length;
+  far char * buffer;
+  int count;
+  far char * c_buffer;
+  char ring[INPUT_BUFFER_MAX];
+  int ring_front;
+  int ring_rear;
+  int ring_count;
+  int ring_size;
+};
+
+typedef struct dcb_struct dcb;
+
 /* Function prototypes. */
 
 /* main.c */
@@ -89,6 +125,7 @@ void cmd_suspend(char *[]);
 void cmd_terminate(char *[]);
 void cmd_setpri(char *[]);
 void cmd_dispatch();
+void cmd_clock(char *[]);
 
 void sys_req(int,int,char *,int *);   /* MPX system request function. */
 int  directory(dir *, int);           /* Support function to load the */
@@ -107,26 +144,52 @@ int insert_pcb(pcb**, pcb *, int);
 int remove_pcb(pcb**, pcb *);
 
 /**
- * TestN.C
+ * DCB.c
  */
-void test1(void);
-void test2(void);
-void test3(void);
-void test4(void);
-void test5(void);
-
+void dcb_enqueue(dcb*, char);
+char dcb_dequeue(dcb*);
+void dcb_init(dcb*);
 /**
  * Sys_sppt.c
  */
 void sys_inti(void);
 void sys_exit(void);
+void clock_open(void);
+void clock_close(void);
+void stop_clock(void);
+void start_clock(void);
+int  set_clock(int, int, int);
+void read_clock(int*, int*, int*);
 void interrupt dispatch(void);
 void interrupt sys_call(void);
+void interrupt clock_int(void);
 
 /**
  * Load.c
  */
 int load(unsigned *,char []);
+
+/**
+ * Com.c
+ */
+int com_open(int *, int);
+void com_close(void);
+void interrupt com_int(void);
+int com_read(char far *, int far *);
+int com_write(char far *, int far *);
+int com_read_int();
+int com_write_int();
+
+/**
+ * Printer.c
+ */
+#define PCR 0x3be
+#define PDR 0x3bc
+
+int prt_open(int *);
+int prt_write(char far *, int *);
+int prt_close(void);
+void interrupt prt_int(void);
 
 /*
  *   Global variable EXTERN directives.
@@ -137,7 +200,7 @@ int load(unsigned *,char []);
  *       is declared in a *.c file.
  */
 #define DIR_SIZE 20
-
+extern dcb com;
 extern dir direct[];  /* Array of directory entries -     see direct.c */
 extern int directory(dir *direct, int dir_size);
 extern pcb * pcb_list;

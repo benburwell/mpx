@@ -60,7 +60,7 @@ int load(unsigned *load_addr,char pname[])
     /* SEGMENT REGISTER VALUE CALL */
 
     segregs = &segr;
-    segread(segregs);    /* returns current segme  disablter values */
+    segread(segregs);    /* returns current segment register values */
 
     strcpy(fname, pname);
     strcat(fname, ".MPX");

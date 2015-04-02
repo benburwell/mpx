@@ -30,8 +30,9 @@
 #define CMD_TERMINATE 14
 #define CMD_SETPRI    15
 #define CMD_DISPATCH  16
+#define CLOCK     17
 
-#define NUM_CMDS 17
+#define NUM_CMDS 18
 
 int length;             /* Length of the command line.      */
 unsigned sp_save;       /* A stack save for mod 4 dispatch. */
@@ -44,12 +45,12 @@ char *cmds[] = { "version", "date", "directory", "stop",
 				 "help", "prompt", "alias", "show",
 				 "allocate", "free", "load", "resume",
 				 "run", "suspend", "terminate", "setpriority",
-				 "dispatch", NULL};
+				 "dispatch", "clock", NULL};
 char *aliases[] = {"        ", "        ", "        ", "        ",
 				   "        ", "        ", "        ", "        ",
 				   "        ", "        ", "        ", "        ",
 				   "        ", "        ", "        ", "        ",
-				   "        ", NULL};
+				   "        ", "        ", NULL};
 
 /*
  *   comhan()    This is the command handler for the MPX OS.
@@ -91,6 +92,7 @@ void comhan() {
 		case CMD_TERMINATE: cmd_terminate(args);  break;
 		case CMD_SETPRI:    cmd_setpri(args);     break;
 		case CMD_DISPATCH:  cmd_dispatch();       break;
+		case CLOCK:     cmd_clock(args);      break;
 		default:
 		  printf("Can't recognize.\n");
 		  break;
@@ -123,7 +125,7 @@ int get_cmd(char cmd[]){
 int set_args(char buffer[], char *args[]) {
   /* use string tok to set the contents of args from buffer
 	 and return the number of args (will go into argc) */
-  char separators[5] = " =/,"; //Characters that separate tokens
+  char separators[5] = " =/,:"; //Characters that separate tokens
   int i = 0; //loop control
 
   args[i] = strtok(buffer, separators); //Get first token
@@ -236,6 +238,7 @@ void cmd_help(char *args[]) {
   help[CMD_TERMINATE] = "terminate name       Terminates the process called name";
   help[CMD_SETPRI]    = "setpriority name=ppp Sets the priority of process name";
   help[CMD_DISPATCH]  = "dispatch             Runs each process once";
+  help[CLOCK]         = "clock [stop|start]   Perform clock operations";
 
   // print header
   printf(               "  Name                 Use \n");
@@ -697,4 +700,33 @@ void cmd_dispatch() {
   // call sys_sppt's dispatch
   dispatch();
   return;
+}
+
+/*
+ * stop, start, set, or show the clock based on args[1]
+ */
+void cmd_clock(char *args[]){
+  int hr, m, s;
+  int ret;
+  // decide what clock operation to perform
+  if (strcmp(args[1], "stop") == 0) {
+	stop_clock();
+	return;
+  } else if (strcmp(args[1], "start") == 0) {
+	start_clock();
+	return;
+  } else if (strcmp(args[1], "") == 0) {
+	read_clock(&hr, &m, &s);
+	printf("The current time is %d:%d:%d\n", hr, m, s);
+	return;
+  } else {
+	// the remaining case is to set the clock
+	// parse the input - should be "hh:mm:ss"
+	ret = set_clock(atoi(args[1]), atoi(args[2]), atoi(args[3]));
+	// call sys_sppt's set_clock(hr, mn, s)
+	// if set_clock returns -1 print error message
+	if (ret == -1) {
+	  printf("Error setting clock\n");
+	}
+  }
 }
