@@ -10,7 +10,6 @@
 #include "mpx.h";
 
 void interrupt (*vect0f)();
-dcb prt;
 
 int prt_opened;
 
@@ -48,7 +47,7 @@ int prt_open(int * prt_flag) {
   return 0;
 }
 
-int prt_write(char far *buffer, int *length) {
+int prt_write(char far *buffer, int far *length) {
   unsigned char pcr;
 
   disable();
@@ -133,7 +132,7 @@ void interrupt prt_int() {
 
 	// call io-complete
 	// TODO: the book says (pg 86) that there should be stuff passed to io-complete
-	IO_complete(2, lst_stk);
+	IO_complete(PRT, lst_stk);
 
 	// send end of interrupt signal
 	outportb(0x20, 0x20);

@@ -14,6 +14,8 @@
 #define  PRT  2       /* The printer device - LPT1.               */
 #define  COM  3       /* The serial port - COM1.                  */
 
+#define DEBUG_PRINTS 0 // 1 for print out debugging statements
+
 /* MPX System request types. */
 
 #define  READ   0  /* Read from device. */
@@ -32,6 +34,17 @@ struct dirstruct {         /* Data type for a directory entry.        */
 typedef struct dirstruct dir;  /* Use dir as the data typer name.     */
 
 /**
+ * parm is a struct to keep track of parameters passed to sys_req
+ */
+struct parmstruct {
+  int op_number;
+  int op_type;
+  char *buffer;
+  int *length;
+};
+typedef struct parmstruct parm;
+
+/**
  * PCB
  */
 
@@ -43,7 +56,7 @@ typedef struct dirstruct dir;  /* Use dir as the data typer name.     */
 #define BLOCKED       2
 #define NOT_SUSPENDED 0
 #define SUSPENDED     1
-#define STACK_SIZE  400
+#define STACK_SIZE  900
 
 struct pcbstruct {
 	struct pcbstruct * chain;
@@ -57,7 +70,7 @@ struct pcbstruct {
 	unsigned stack_ptr;
 	unsigned stack[STACK_SIZE];
 	unsigned loadaddr;
-	unsigned parm_add; // added during mod because sys_call said so
+	parm *parm_add;
 	int mem_size;
 };
 typedef struct pcbstruct pcb;
@@ -86,6 +99,8 @@ typedef struct pcbstruct pcb;
 struct dcb_struct {
   unsigned current_op;
   unsigned * event_flag;
+  pcb * current_pcb;
+  pcb * pcb_head;
   far int * length;
   far char * buffer;
   int count;
@@ -115,8 +130,8 @@ void cmd_help(char *[]);
 void cmd_prompt(char *[]);
 void cmd_alias(char *[]);
 void cmd_show(char *[]);
-void cmd_allocate(char *[]);
-void cmd_free(char *[]);
+//void cmd_allocate(char *[]);
+//void cmd_free(char *[]);
 
 void cmd_load(char *[]);
 void cmd_resume(char *[]);
@@ -124,7 +139,7 @@ void cmd_run(char *[]);
 void cmd_suspend(char *[]);
 void cmd_terminate(char *[]);
 void cmd_setpri(char *[]);
-void cmd_dispatch();
+//void cmd_dispatch();
 void cmd_clock(char *[]);
 
 void sys_req(int,int,char *,int *);   /* MPX system request function. */
@@ -187,9 +202,14 @@ int com_write_int();
 #define PDR 0x3bc
 
 int prt_open(int *);
-int prt_write(char far *, int *);
+int prt_write(char far *, int far *);
 int prt_close(void);
 void interrupt prt_int(void);
+
+
+int IO_complete(int, int*);
+int IO_sched(pcb *);
+void IO_sup(pcb *);
 
 /*
  *   Global variable EXTERN directives.
@@ -201,11 +221,16 @@ void interrupt prt_int(void);
  */
 #define DIR_SIZE 20
 extern dcb com;
+extern dcb prt;
+extern dcb con;
 extern dir direct[];  /* Array of directory entries -     see direct.c */
 extern int directory(dir *direct, int dir_size);
 extern pcb * pcb_list;
-extern pcb * ready_queue;
+extern pcb * ready_queue_locked;
 extern pcb * io_init_queue;
 extern pcb * cop; /* The currently operating process. */
 extern unsigned sys_stack[];
 extern unsigned sp_save; /* So that mod 4 can return to cmd_dispatch */
+extern int prt_eflag;
+extern int con_eflag;
+extern int com_eflag;

@@ -1,6 +1,7 @@
 #include "mpx.h"
 #include <string.h>
 #include <stdio.h>
+#include <dos.h>
 
 #define STK_PSW    (STACK_SIZE - 1)
 #define STK_CS     (STACK_SIZE - 2)
@@ -125,9 +126,12 @@ int insert_pcb(pcb **queue, pcb * addr, int method) {
   pcb * current = *queue;
   pcb * one_after;
 
+  disable();
+
   // if there's nothing in the queue yet, make the PCB the start
   if (current == NULL) {
 	*queue = addr;
+	enable();
 	return 1;
   }
 
@@ -143,6 +147,7 @@ int insert_pcb(pcb **queue, pcb * addr, int method) {
 	current->next = addr;
 	addr->next = NULL;
 	addr->prev = current;
+	enable();
 	return 1;
   } else if (method == 0) {
 	// insert in priority order
@@ -171,8 +176,10 @@ int insert_pcb(pcb **queue, pcb * addr, int method) {
 	  addr->next = current;
 	  *queue = addr;
 	}
+	enable();
 	return 1;
   } else {
+	enable();
 	// There was a problem, return error code
 	return -1;
   }
@@ -184,11 +191,13 @@ int insert_pcb(pcb **queue, pcb * addr, int method) {
 int remove_pcb(pcb **queue, pcb * addr) {
   pcb * current = *queue;
 
+  disable();
   // are we removing the head?
   if (addr == *queue) {
 	*queue = addr->next;
 	if (addr->next != NULL) {
 	  (addr->next)->prev = NULL;
+	  addr->next = NULL;
 	}
 	return 0;
   }
@@ -206,5 +215,6 @@ int remove_pcb(pcb **queue, pcb * addr) {
 	}
 	current = current->next;
   } while (current != NULL);
+  enable();
   return -1;
 }

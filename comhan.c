@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <dos.h>
 #include "mpx.h"
 
 #define BUF_SIZE 80      /* Size of the command line buffer. */
@@ -69,13 +70,15 @@ void comhan() {
 
 	do {
 	  printf("%s ",prompt);              /* Print a prompt.         */
+	  //length = 4; //mpx>
+	  //sys_req(COM, WRITE, prompt, &length);
 	  length = BUF_SIZE;                 /* Reset length of buffer. */
 	  sys_req(CON,READ,buffer,&length);  /* Request CON input       */
 
 	  set_args(buffer, args);
 
 	  switch (get_cmd(args[0])) {
-		case VERSION:   cmd_version();        break;
+		case VERSION:       cmd_version();        break;
 		case DATE:          cmd_date(args);       break;
 		case DIRECTORY:     cmd_directory();      break;
 		case STOP:          do_stop = cmd_stop(); break;
@@ -83,18 +86,18 @@ void comhan() {
 		case PROMPT:        cmd_prompt(args);     break;
 		case ALIAS:         cmd_alias(args);      break;
 		case SHOW:          cmd_show(args);       break;
-		case ALLOCATE:      cmd_allocate(args);   break;
-		case CMD_FREE:      cmd_free(args);       break;
+//		case ALLOCATE:      cmd_allocate(args);   break;
+//		case CMD_FREE:      cmd_free(args);       break;
 		case CMD_LOAD:      cmd_load(args);       break;
 		case CMD_RESUME:    cmd_resume(args);     break;
 		case CMD_RUN:       cmd_run(args);        break;
 		case CMD_SUSPEND:   cmd_suspend(args);    break;
 		case CMD_TERMINATE: cmd_terminate(args);  break;
 		case CMD_SETPRI:    cmd_setpri(args);     break;
-		case CMD_DISPATCH:  cmd_dispatch();       break;
-		case CLOCK:     cmd_clock(args);      break;
+//		case CMD_DISPATCH:  cmd_dispatch();       break;
+		case CLOCK:         cmd_clock(args);      break;
 		default:
-		  printf("Can't recognize.\n");
+		  printf("Can't recognize. %s\n", args[0]);
 		  break;
 	  }
 	} while (!do_stop);
@@ -125,7 +128,8 @@ int get_cmd(char cmd[]){
 int set_args(char buffer[], char *args[]) {
   /* use string tok to set the contents of args from buffer
 	 and return the number of args (will go into argc) */
-  char separators[5] = " =/,:"; //Characters that separate tokens
+  char separators[5] = " /,:"; //Characters that separate tokens
+  // TODO: put = back in separators
   int i = 0; //loop control
 
   args[i] = strtok(buffer, separators); //Get first token
@@ -205,6 +209,7 @@ int cmd_stop(){
 	  }
 	  p = p->chain;
 	} while(p != NULL);
+	sys_exit();
 	printf("** COMHAN execution complete **\n");
 	return 1;
   } else {
@@ -321,7 +326,9 @@ void cmd_show(char *args[]) {
   printf("------ -------- --- ------ ------ ------ --- ------ \n");
 
   if (strcmp(args[1], "init") == 0 || strcmp(args[1], "ready") == 0) {
-	current = (strcmp(args[1], "init") == 0)? io_init_queue : ready_queue;
+	disable();
+	current = (strcmp(args[1], "init") == 0)? io_init_queue : ready_queue_locked;
+	enable();
 
 	if (current == NULL) {
 	  return;
@@ -357,128 +364,6 @@ void cmd_show(char *args[]) {
   } while (current != NULL);
 }
 
-void cmd_allocate(char *args[]) {
-  pcb * new;
-  int result;
-  int type, state, suspend, priority;
-  pcb * exists;
-
-  if (!args[1] || !args[2] || !args[3] || !args[4] || !args[5]) {
-	printf("Error: Please use the correct number of arguments. \n");
-	return;
-  }
-
-  if (strcmp(args[2], "f") != 0 &&
-	  strcmp(args[2], "a") != 0 &&
-	  strcmp(args[2], "s") != 0) {
-		printf("Error: PCB type must be f(ree), a(pplication) or s(ystem). \n");
-		printf("You said: %s \n", args[2]);
-		return;
-  }
-
-  if (strcmp(args[3], "r") != 0 &&
-	  strcmp(args[3], "o") != 0 &&
-	  strcmp(args[3], "b") != 0) {
-		printf("Error: PCB state must be r(eady), o(running), or b(locked). \n");
-		printf("You said: %s \n", args[3]);
-		return;
-  }
-
-  if (strcmp(args[4], "y") != 0 &&
-	  strcmp(args[4], "n") != 0) {
-		printf("Error: PCB suspended flag must be y(es) or n(o). \n");
-		printf("You said: %s \n", args[4]);
-		return;
-  }
-
-  priority = atoi(args[5]);
-
-  exists = search_pcb(pcb_list, args[1]);
-
-  if(exists != NULL){
-	printf("Error: A pcb with that name already esists. \n");
-	return;
-  }
-
-  new = get_pcb(pcb_list);
-
-  type = FREE;
-  if (strcmp(args[2], "a") == 0) {
-	type = APP_PROCESS;
-  } else if (strcmp(args[2], "s") == 0) {
-	type = SYS_PROCESS;
-  }
-
-  state = READY;
-  if (strcmp(args[3], "o") == 0) {
-	state = RUNNING;
-  } else if (strcmp(args[3], "b") == 0) {
-	state = BLOCKED;
-  }
-
-  suspend = NOT_SUSPENDED;
-  if (strcmp(args[4], "y") == 0) {
-	suspend = SUSPENDED;
-  }
-
-  if (type == APP_PROCESS && (priority < -126 || priority > 126)) {
-	printf("Error: The priority for an application process must be \n");
-	printf("between -126 and 126, inclusive. \n");
-	return;
-  }
-
-  if (type == SYS_PROCESS && (priority < -128 || priority > 127)) {
-	printf("Error: The priority for a system process must be \n");
-	printf("between -128 and 127, inclusive. \n");
-	return;
-  }
-
-  result = build_pcb(new, args[1], type, state, suspend, priority,
-					 NULL, NULL, NULL, NULL);
-
-  switch (result) {
-	case 1:  break;
-
-	case -1: printf("Error: There was no space for another pcb. \n");
-			 break;
-
-	case -2: printf("Error: Invalid type \n");
-			 break;
-
-	case -3: printf("Error: Invalid state \n");
-			 break;
-
-	case -4: printf("Error: Invalid suspend \n");
-			 break;
-  }
-
-  //put the pcb in a queue
-  if (state == READY) {
-	insert_pcb(&ready_queue, new, 0); //insert in priority order
-  } else if (state == BLOCKED) {
-	insert_pcb(&io_init_queue, new, 1); //insert at end of queue
-  }
-
-  return;
-}
-
-void cmd_free(char *args[]) {
-  pcb * to_free = search_pcb(pcb_list, args[1]);
-  int result;
-
-  if (to_free->state == READY) {
-	remove_pcb(&ready_queue, to_free);
-  } else if(to_free->state == BLOCKED) {
-	remove_pcb(&io_init_queue, to_free);
-  }
-
-  result = free_pcb(pcb_list, to_free);
-  switch (result) {
-	case -1: printf("Error: Couldn't find PCB\n"); break;
-	case -2: printf("Error: PCB already free\n");  break;
-  }
-}
-
 /**
  * Load
  */
@@ -490,6 +375,11 @@ void cmd_load(char *args[]) {
   char* name = args[1];
   // figure out how many directory entries
   int num = directory(direct, DIR_SIZE);
+
+  if (num < 1) {
+	printf("Error: no programs available to load. \n");
+	return;
+  }
 
   // search in the directory for the specified program
   i = 0;
@@ -541,8 +431,9 @@ void cmd_load(char *args[]) {
 	printf("Error: Unable to build PCB. \n");
 	return;
   }
-
-  insert_pcb(&ready_queue, p, 0);
+  disable();
+  insert_pcb(&ready_queue_locked, p, 0);
+  enable();
   return;
 }
 
@@ -625,11 +516,13 @@ void cmd_terminate(char *args[]) {
 	 do {
 	   if (p->type == APP_PROCESS) {
 		 // remove from queue as needed
+		 disable();
 		 if (p->state == READY) {
-		   remove_pcb(&ready_queue, p);
+		   remove_pcb(&ready_queue_locked, p);
 		 } else if (p->state == BLOCKED) {
 		   remove_pcb(&io_init_queue, p);
 		 }
+		 enable();
 
 		 // free it
 		 freemem(p->loadaddr);
@@ -643,12 +536,14 @@ void cmd_terminate(char *args[]) {
 
 	 if (p != NULL && p->type == APP_PROCESS) {
 
+	   disable();
 	   // remove from queue as needed
 	   if (p->state == READY) {
-		 remove_pcb(&ready_queue, p);
+		 remove_pcb(&ready_queue_locked, p);
 	   } else if (p->state == BLOCKED) {
 		 remove_pcb(&io_init_queue, p);
 	   }
+	   enable();
 
 	   // free it
 	   freemem(p->loadaddr);
@@ -674,32 +569,17 @@ void cmd_setpri(char *args[]) {
   if (p != NULL) {
 	// Check the priority is valid
 	if (p->type == APP_PROCESS && new_priority >= -128 && new_priority <= 127) {
-	  remove_pcb(&ready_queue, p);      // Take pcb out of ready queue
+	  disable();
+	  remove_pcb(&ready_queue_locked, p);      // Take pcb out of ready queue
 	  p->priority = new_priority;       // Change priority
-	  insert_pcb(&ready_queue, p, 0);   // Re-insert pcb in ready queue
+	  insert_pcb(&ready_queue_locked, p, 0);   // Re-insert pcb in ready queue
+	  enable();
 	} else {
 	  printf("Error: invalid priority. \n");
 	}
   } else {
 	printf("Error: invalid process name. \n");
   }
-}
-
-/**
- * Dispatch
- */
-void cmd_dispatch() {
-  // set up a pointer to the ready queue
-  pcb dummy;
-  cop = &dummy;
-  cop -> next = ready_queue;
-
-  // save the stack pointer so we can return here
-  sp_save = _SP - 24;
-
-  // call sys_sppt's dispatch
-  dispatch();
-  return;
 }
 
 /*

@@ -13,7 +13,6 @@
 
 
 void interrupt (*vect0c)();
-dcb com;
 
 int com_opened;
 
@@ -106,7 +105,10 @@ void com_close() {
 
 void interrupt com_int() {
   int iir;
+  int *lst_stk;
   int ret = 0; //0 indicates not finished, 1 indicated finshed
+
+  lst_stk = _BP;
 
   // check IIR to see what caused the interrupt
   iir = inportb(IIR);
@@ -123,7 +125,7 @@ void interrupt com_int() {
   }
 
   if (ret == 1) {
-	IO_complete();
+	IO_complete(COM, lst_stk);
   }
 
   // write end of interrupt to 8259

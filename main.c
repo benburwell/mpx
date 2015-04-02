@@ -6,10 +6,11 @@
  */
 
 #include <stdio.h>
+#include <dos.h>
 #include "mpx.h"
 
 pcb * pcb_list;
-pcb * ready_queue;
+pcb * ready_queue_locked;
 pcb * io_init_queue;
 pcb * cop;
 
@@ -26,12 +27,30 @@ pcb pcb9;
 pcb pcb10;
 pcb pcb11;
 
+dcb com;
+dcb prt;
+dcb con;
+int com_eflag;
+int con_eflag;
+int prt_eflag;
+
 unsigned sys_stack[STACK_SIZE];
 
 int main(void) {
 	pcb * pcb_addr;
+	int rc;
+	dcb * d = &con;//test
+	char *args[] = {"load", "idle"};
+
 	printf("Booting MPX... \n");
-	/* Put initialization code here */
+
+	sys_init();
+
+	if (DEBUG_PRINTS) printf("did init \n");
+
+	d->event_flag = &con_eflag;
+
+	if (DEBUG_PRINTS) printf("making chain \n");
 
 	// create the chain
 	pcb0.chain  = &pcb1;
@@ -46,6 +65,8 @@ int main(void) {
 	pcb9.chain  = &pcb10;
 	pcb10.chain = &pcb11;
 	pcb11.chain = NULL;
+
+	if (DEBUG_PRINTS) printf("building pcbs \n");
 
 	build_pcb(&pcb0,  "        ", FREE, -1, -1, 0, NULL, NULL, NULL, NULL);
 	build_pcb(&pcb1,  "        ", FREE, -1, -1, 0, NULL, NULL, NULL, NULL);
@@ -65,8 +86,40 @@ int main(void) {
 	// initialize the currently running process
 	cop = NULL;
 
-	sys_init();
-	comhan();    /* Execute the command handler */
+	// set up command handler as a PCB
+	pcb_addr = get_pcb(pcb_list);
+	rc = build_pcb(pcb_addr, "ComHan", SYS_PROCESS, READY, NOT_SUSPENDED, 127, _CS,
+	  (unsigned)comhan, _DS, 0x200);
+
+	disable();
+	insert_pcb(&ready_queue_locked, pcb_addr, 0);
+	enable();
+
+	if (DEBUG_PRINTS) printf("comhan in queue \n");
+
+
+	// set up idle process
+	cmd_load(args);
+
+	if (DEBUG_PRINTS) printf("loaded \n");
+
+	// update priority for idle process
+	// we can't do this when initially calling because of
+	// APP_PROCESS type priority validation
+	pcb_addr = search_pcb(&pcb_list, "idle");
+	pcb_addr->priority = -128;
+	pcb_addr->suspend = NOT_SUSPENDED;
+	pcb_addr->type = SYS_PROCESS;
+
+	if (DEBUG_PRINTS) printf("pri set \n");
+
+	// ALREADY IN QUEUE THANKS TO CMD_LOAD
+	//insert_pcb(&ready_queue, pcb_addr, 0);
+
+	if (DEBUG_PRINTS) printf("idle in queue \n");
+
+	dispatch();
+
 	sys_exit();
 
 	return 0;
