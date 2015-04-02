@@ -31,6 +31,36 @@ struct dirstruct {         /* Data type for a directory entry.        */
 
 typedef struct dirstruct dir;  /* Use dir as the data typer name.     */
 
+/**
+ * PCB
+ */
+
+#define FREE          0
+#define SYS_PROCESS   1
+#define APP_PROCESS   2
+#define READY         0
+#define RUNNING       1
+#define BLOCKED       2
+#define NOT_SUSPENDED 0
+#define SUSPENDED     1
+
+
+struct pcbstruct {
+	struct pcbstruct * chain;
+	struct pcbstruct * next;
+	struct pcbstruct * prev;
+	char name[9];
+	short type;
+	short priority;
+	short state;
+	short suspend;
+	unsigned stack_ptr;
+	unsigned stack[400];
+	unsigned loadaddr;
+	int mem_size;
+};
+typedef struct pcbstruct pcb;
+
 /* Function prototypes. */
 
 /* main.c */
@@ -42,13 +72,27 @@ int get_cmd(char args[]);
 void cmd_version(void);
 void cmd_date(char *[]);
 void cmd_directory(void);
-void cmd_stop(void);
+int cmd_stop(void);
 void cmd_help(char *[]);
 void cmd_prompt(char *[]);
 void cmd_alias(char *[]);
+void cmd_show(char *[]);
+void cmd_allocate(char *[]);
+void cmd_free(char *[]);
 void sys_req(int,int,char *,int *);   /* MPX system request function. */
 int  directory(dir *, int);           /* Support function to load the */
 					  /* directory array.             */
+
+/**
+ * PCB.C
+ */
+pcb * search_pcb(pcb *, char[]);
+pcb * get_pcb(pcb *);
+int free_pcb(pcb *, pcb *);
+int build_pcb(pcb *, char[], int, int, int, int);
+int insert_pcb(pcb**, pcb *, int);
+int remove_pcb(pcb**, pcb *);
+
 
 /*
  *   Global variable EXTERN directives.
@@ -62,3 +106,6 @@ int  directory(dir *, int);           /* Support function to load the */
 
 extern dir direct[];  /* Array of directory entries -     see direct.c */
 extern int directory(dir *direct, int dir_size);
+extern pcb * pcb_list;
+extern pcb * ready_queue;
+extern pcb * io_init_queue;
