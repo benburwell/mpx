@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "mpx.h"
 
 #define BUF_SIZE 80      /* Size of the command line buffer. */
@@ -79,7 +80,7 @@ void comhan() {
 int get_cmd(char cmd[]){
   /* return the number associated with a command (use STOP, HELP etc) */
 
-  int i =0 ; //loop control
+  int i = 0; //loop control
 
   if (cmd == NULL) {
 	return -1;

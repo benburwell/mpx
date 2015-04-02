@@ -146,7 +146,9 @@ int insert_pcb(pcb **queue, pcb * addr, int method) {
 	  current->next = addr;
 	  addr->next = one_after;
 	  addr->prev = current;
-	  one_after->prev = addr;
+	  if (one_after != NULL) {
+		one_after->prev = addr;
+	  }
 	} else {
 
 	  // otherwise, put it at the head

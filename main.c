@@ -12,23 +12,22 @@ pcb * pcb_list;
 pcb * ready_queue;
 pcb * io_init_queue;
 
+pcb pcb0;
+pcb pcb1;
+pcb pcb2;
+pcb pcb3;
+pcb pcb4;
+pcb pcb5;
+pcb pcb6;
+pcb pcb7;
+pcb pcb8;
+pcb pcb9;
+pcb pcb10;
+pcb pcb11;
+
 int main(void) {
-
+	printf("Booting MPX... \n");
 	/* Put initialization code here */
-
-	// allocate memory for PCBs
-	pcb pcb0;
-	pcb pcb1;
-	pcb pcb2;
-	pcb pcb3;
-	pcb pcb4;
-	pcb pcb5;
-	pcb pcb6;
-	pcb pcb7;
-	pcb pcb8;
-	pcb pcb9;
-	pcb pcb10;
-	pcb pcb11;
 
 	// create the chain
 	pcb0.chain  = &pcb1;
@@ -58,8 +57,6 @@ int main(void) {
 	build_pcb(&pcb11, "        ", FREE, -1, -1, 0);
 
 	pcb_list = &pcb0;
-
-	printf("... booting MPX\n\n");
 
 	comhan();    /* Execute the command handler */
 
